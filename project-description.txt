@@ -1,9 +1,0 @@
-Some assembly sequences involve manipulation and handover of a workpiece from onerobot to another.
-This task is typically accomplished by having one robot static while theother approaches and performs handover. 
-This project will investigate the possibility of using dual robot trajectory planning in order to transfer the piece from one robot to the other
-while both are in motion, in order to reduce cycle time.
-
-The project will contain the following subjects
-- Dual robot trajectory planning
-- Real-time robot control
-- Pose estimation (optional)
