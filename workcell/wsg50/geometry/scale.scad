@@ -1,1 +1,0 @@
-import("wsg50finger1.stl");
