@@ -1,0 +1,120 @@
+<SerialDevice name="UR-6-85-5-A">
+ <Frame name="Base">
+  <RPY> 0 0 0 </RPY> <Pos> 0 0 0</Pos> 
+ </Frame>
+
+<Frame name="BaseMov" type="Movable">
+	<Transform>
+    		1 0 0 0
+		0 1 0 0
+		0 0 1 0
+	</Transform>
+</Frame>
+ 
+<Joint name="Joint0" type="Revolute" />
+
+<Frame name="DH0" type="Movable" />
+ 
+<Joint name="Joint1" type="Revolute">
+	<Pos>0 0 0.08920</Pos>
+	<RPY>0 0 90</RPY>
+</Joint>
+
+<Frame name="DH1" refframe="Joint1" type="Movable" />
+ 
+<Joint name="Joint2" type="Revolute">
+	<Pos>-0.425 0 0</Pos>
+	<RPY>0 0 0</RPY>
+</Joint>
+
+<Frame name="DH2" type="Movable" />
+ 
+<Joint name="Joint3" type="Revolute">
+	<Pos>-0.39243 0 0</Pos>
+	<RPY>0 0 0</RPY>
+</Joint>
+
+<Frame name="DH3" type="Movable" />
+
+<Joint name="Joint4" type="Revolute">
+	<Pos>0 0 0.109</Pos>
+	<RPY>0 0 90</RPY>
+</Joint>
+
+<Frame name="DH4" type="Movable" />
+ 
+<Joint name="Joint5" type="Revolute">
+	<Pos>0 0 0.093</Pos>
+	<RPY>0 0 -90</RPY>
+</Joint>
+
+<Frame name="DH5" type="Movable" />
+
+ <Frame name="TCP" refframe="Joint5" >
+	<Transform>
+		1 0 0 0
+		0 1 0 0
+		0 0 1 0.082    		
+	</Transform>
+ </Frame>
+
+ <PosLimit refjoint="Joint0" min="-180" max="180" />
+ <PosLimit refjoint="Joint1" min="-270" max="90" />
+ <PosLimit refjoint="Joint2" min="-180" max="180" />
+ <PosLimit refjoint="Joint3" min="-270" max="90" /> 
+ <PosLimit refjoint="Joint4" min="-180" max="180" />
+ <PosLimit refjoint="Joint5" min="-180" max="180" />
+
+ <VelLimit refjoint="Joint0" max="60" />
+ <VelLimit refjoint="Joint1" max="60" />
+ <VelLimit refjoint="Joint2" max="60" />
+ <VelLimit refjoint="Joint3" max="60" /> 
+ <VelLimit refjoint="Joint4" max="60" />
+ <VelLimit refjoint="Joint5" max="60" />
+
+ <AccLimit refjoint="Joint0" max="120" />
+ <AccLimit refjoint="Joint1" max="120" />
+ <AccLimit refjoint="Joint2" max="120" />
+ <AccLimit refjoint="Joint3" max="120" /> 
+ <AccLimit refjoint="Joint4" max="120" />
+ <AccLimit refjoint="Joint5" max="120" />
+
+<Drawable name="flangeGeo" refframe="Base">
+  	<RPY> 0 90 180</RPY> <Pos> 0 0 0.003</Pos>
+  	<Polytope file="geometry/robotFlange" />
+ </Drawable>
+<Drawable name="flangeGeo" refframe="Base">
+  	<RPY> 0 90 180</RPY> <Pos> 0 0 0.0030</Pos>
+  	<Polytope file="geometry/base" />
+ </Drawable>
+ <Drawable name="Joint0Geo" refframe="Joint0">
+  	<RPY> 180 90 0</RPY> <Pos> 0 0 0.003</Pos>
+  	<Polytope file="geometry/joint0" />
+ </Drawable>
+ <Drawable name="Joint1Geo" refframe="Joint1">
+	<RPY> 0 0 90 </RPY> <Pos> 0.08620 0 0</Pos>
+  	<Polytope file="geometry/joint1" />
+ </Drawable>
+ <Drawable name="Joint2Geo" refframe="Joint2">
+	<RPY>0 0 90 </RPY> <Pos> 0.5112 0 0</Pos>
+  	<Polytope file="geometry/joint2" />
+ </Drawable>
+ <Drawable name="Joint3Geo" refframe="Joint3">
+  	<RPY> 90 0 90 </RPY> <Pos> 0 0.90363 0</Pos>
+  	<Polytope file="geometry/joint3" />
+ </Drawable>
+ 
+ <Drawable name="Joint4Geo" refframe="Joint4">
+  	<RPY> 0 90 0 </RPY> <Pos> 0 -0.109 -0.90363</Pos> 
+  	<Polytope file="geometry/joint4" /> 
+ </Drawable>
+
+  <Drawable name="Joint5Geo" refframe="Joint5" >
+	<RPY> 90 0 90</RPY> <Pos>0 0.99663 -0.109</Pos>
+	<Polytope file="geometry/joint5" /> 
+ </Drawable>
+
+ <CollisionSetup file="CollisionSetup.prox.xml" />
+
+<Q name="Home">1.571 -1.571 -1.571 -1.571 1.571 0 </Q>
+</SerialDevice>
