@@ -1,34 +1,46 @@
 <WorkCell name="Scene">
+    
+    <!-- Objects -->
 
-	<Frame name="Table" refframe="WORLD" type="Fixed">
-		<RPY>0 0 0</RPY> <Pos>0 0 -0.1</Pos>		
-		 <Drawable name="Table" refframe="Table">
-         <Polytope file="table/Sigmund_table" />
-     </Drawable>
-	</Frame>
+    <Frame name="Table" refframe="WORLD" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0 0 -0.1</Pos>
+        <Drawable name="Table" refframe="Table">
+            <Polytope file="objects/table/Sigmund_table" />
+        </Drawable>
+    </Frame>
 
-	<Frame name="URReference" refframe="Table" type="Movable">
-		<RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos>
-	</Frame>
-	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
+    <!-- Devices -->
 
+    <Frame name="URReference_Right" refframe="Table" type="Movable">
+        <RPY>0 0 0</RPY> <Pos>0 -0.5 0.11</Pos>
+    </Frame>
+    <Include file="devices/UR-6-85-5-A_Right/Device.wc.xml" />
 
+    <Frame name="URReference_Left" refframe="Table" type="Movable">
+        <RPY>180 0 0</RPY> <Pos>0 0.5 0.11</Pos>
+    </Frame>
+    <Include file="devices/UR-6-85-5-A_Left/Device.wc.xml" />
+    
+    <Frame name="Gripper_Right" refframe="UR-6-85-5-A_Right.TCP" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0 0 0.072</Pos>
+    </Frame>
+    <Include file="devices/wsg50_Right/wsg50.xml" />
 
+    <Frame name="Gripper_Left" refframe="UR-6-85-5-A_Left.TCP" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0 0 0.072</Pos>
+    </Frame>
+    <Include file="devices/wsg50_Left/wsg50.xml" />
 
+    <Frame name="GraspTCP_Right" refframe="UR-6-85-5-A_Right.TCP" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
+    </Frame>
 
-<!--insert gripper definition-->
+    <Frame name="GraspTCP_Left" refframe="UR-6-85-5-A_Left.TCP" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
+    </Frame>
 
+    <!-- Collision -->
 
-
-	<Frame name="GraspTCP" refframe="UR-6-85-5-A.TCP" type="Fixed">
-		<RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
-	</Frame>
-	
-
-
-
-<!-- Cameras -->
-
-<CollisionSetup file="SceneCollisionSetup.prox.xml" /> 
+    <CollisionSetup file="SceneCollisionSetup.prox.xml" /> 
 
 </WorkCell>
