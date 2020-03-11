@@ -1,3 +1,2 @@
 # Dual-robots
-
-This is a project for SDU involving the control two UR robot arms in the same workspace while avoiding collisions. 
+This project will investigate the possibility of using dual robot trajectory planning in order to successfully transfer a piece from one robot to the other while both are in motion, in order to reduce cycle time.
