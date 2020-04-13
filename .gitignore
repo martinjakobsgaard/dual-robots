@@ -5,7 +5,7 @@ plugin/libs/Release/libRoViPlugin.so
 plugin/Makefile
 plugin/qrc_resources.cpp
 plugin/ui_SamplePlugin.h
+plugin/rwsettings.xml
 plugin/src/moc_SamplePlugin.cpp
 plugin/src/moc_SamplePlugin.cpp_parameters
 plugin/src/resources.qrc.depends
-plugin/src/resources.qrc
