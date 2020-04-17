@@ -47,6 +47,8 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         void stateChangedListener(const rw::kinematics::State& state);
 
+        void home_button();
+
         bool checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q);
         void createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime);
 

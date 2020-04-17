@@ -5,12 +5,9 @@ DualRobotPlugin::DualRobotPlugin():
 {
     setupUi(this);
 
-    // now connect stuff from the ui component
+    // Connect UI components to member functions
+    connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
     //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    //connect(_btn_scan    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    //connect(_btn0    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    //connect(_btn1    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    //connect(_spinBox  ,SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
 
@@ -222,6 +219,11 @@ void DualRobotPlugin::getImage()
 void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 {
     rws_state = state;
+}
+
+void DualRobotPlugin::home_button()
+{
+    std::cout << "Home button pressed!" << std::endl;
 }
 
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
