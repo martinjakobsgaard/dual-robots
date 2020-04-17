@@ -16,6 +16,14 @@
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
+     <widget class="QLabel" name="_label">
+      <property name="text">
+       <string>Label</string>
+      </property>
+     </widget>
+    </item>
+    <!--
+    <item>
      <widget class="QPushButton" name="_btn_im">
       <property name="text">
        <string>Get Image</string>
@@ -53,13 +61,7 @@
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QLabel" name="_label">
-      <property name="text">
-       <string>Label</string>
-      </property>
-     </widget>
-    </item>
+    -->
    </layout>
   </widget>
  </widget>

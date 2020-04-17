@@ -78,8 +78,8 @@ class SamplePlugin: public rws::RobWorkStudioPlugin, private Ui::SamplePlugin
 
         virtual void initialize();
 
-        private slots:
-            void btnPressed();
+    private slots:
+        //void btnPressed();
         void timer();
         void getImage();
         void get25DImage();

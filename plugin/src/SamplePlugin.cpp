@@ -11,11 +11,11 @@ SamplePlugin::SamplePlugin():
     connect(_timer, SIGNAL(timeout()), this, SLOT(timer()));
 
     // now connect stuff from the ui component
-    connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    connect(_btn_scan    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    connect(_btn0    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    connect(_btn1    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-    connect(_spinBox  ,SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
+    //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
+    //connect(_btn_scan    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
+    //connect(_btn0    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
+    //connect(_btn1    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
+    //connect(_spinBox  ,SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
 
@@ -157,7 +157,7 @@ Mat SamplePlugin::toOpenCVImage(const Image& img)
     return res;
 }
 
-
+/*
 void SamplePlugin::btnPressed()
 {
     QObject *obj = sender();
@@ -202,6 +202,7 @@ void SamplePlugin::btnPressed()
         get25DImage();
     }
 }
+*/
 
 void SamplePlugin::get25DImage()
 {
@@ -263,7 +264,7 @@ void SamplePlugin::getImage()
             QPixmap p = QPixmap::fromImage(img);
             unsigned int maxW = 480;
             unsigned int maxH = 640;
-            _label->setPixmap(p.scaled(maxW,maxH,Qt::KeepAspectRatio));
+            //_label->setPixmap(p.scaled(maxW,maxH,Qt::KeepAspectRatio));
         }
     }
 }
