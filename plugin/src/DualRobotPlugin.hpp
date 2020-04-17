@@ -36,8 +36,6 @@
 
 #include <functional>
 
-using namespace rw::models;
-using namespace rw::sensor;
 using namespace rwlibs::opengl;
 using namespace rwlibs::simulation;
 
@@ -77,7 +75,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         void stateChangedListener(const rw::kinematics::State& state);
 
-        bool checkCollisions(Device::Ptr device, const rw::kinematics::State &state, const CollisionDetector &detector, const Q &q);
+        bool checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const CollisionDetector &detector, const Q &q);
         void createPathRRTConnect(Q from, Q to,  double extend, double maxTime);
 
     private:

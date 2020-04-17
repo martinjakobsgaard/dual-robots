@@ -41,7 +41,7 @@ void DualRobotPlugin::initialize()
     }
     else
     {
-        WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene.wc.xml");
+        rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene.wc.xml");
 
         if (wc == nullptr)
         {
@@ -54,7 +54,7 @@ void DualRobotPlugin::initialize()
     }
 }
 
-void DualRobotPlugin::open(WorkCell* workcell)
+void DualRobotPlugin::open(rw::models::WorkCell* workcell)
 {
     log().info() << "OPEN" << "\n";
     rws_wc = workcell;
@@ -149,7 +149,7 @@ void DualRobotPlugin::close()
     rws_wc = NULL;
 }
 
-Mat DualRobotPlugin::toOpenCVImage(const Image& img)
+Mat DualRobotPlugin::toOpenCVImage(const rw::sensor::Image& img)
 {
     Mat res(img.getHeight(),img.getWidth(), CV_8SC3);
     res.data = (uchar*)img.getImageData();
