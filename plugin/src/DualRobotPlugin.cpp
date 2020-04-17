@@ -1,9 +1,9 @@
-#include "SamplePlugin.hpp"
+#include "DualRobotPlugin.hpp"
 
 #include <cstdlib>
 
-SamplePlugin::SamplePlugin():
-    RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_icon.png"))
+DualRobotPlugin::DualRobotPlugin():
+    RobWorkStudioPlugin("DualRobotPluginUI", QIcon(":/pa_icon.png"))
 {
     setupUi(this);
 
@@ -23,17 +23,17 @@ SamplePlugin::SamplePlugin():
     _cameras25D = {"Scanner25D"};
 }
 
-SamplePlugin::~SamplePlugin()
+DualRobotPlugin::~DualRobotPlugin()
 {
     delete _textureRender;
     delete _bgRender;
 }
 
-void SamplePlugin::initialize()
+void DualRobotPlugin::initialize()
 {
     log().info() << "INITALIZE" << "\n";
 
-    getRobWorkStudio()->stateChangedEvent().add(std::bind(&SamplePlugin::stateChangedListener, this, std::placeholders::_1), this);
+    getRobWorkStudio()->stateChangedEvent().add(std::bind(&DualRobotPlugin::stateChangedListener, this, std::placeholders::_1), this);
 
     // Get path to project from environment
     char* projectpath = std::getenv("DUALROBOTDIR");
@@ -57,7 +57,7 @@ void SamplePlugin::initialize()
     }
 }
 
-void SamplePlugin::open(WorkCell* workcell)
+void DualRobotPlugin::open(WorkCell* workcell)
 {
     log().info() << "OPEN" << "\n";
     _wc = workcell;
@@ -123,7 +123,7 @@ void SamplePlugin::open(WorkCell* workcell)
 }
 
 
-void SamplePlugin::close()
+void DualRobotPlugin::close()
 {
     log().info() << "CLOSE" << "\n";
 
@@ -150,7 +150,7 @@ void SamplePlugin::close()
     _wc = NULL;
 }
 
-Mat SamplePlugin::toOpenCVImage(const Image& img)
+Mat DualRobotPlugin::toOpenCVImage(const Image& img)
 {
     Mat res(img.getHeight(),img.getWidth(), CV_8SC3);
     res.data = (uchar*)img.getImageData();
@@ -158,7 +158,7 @@ Mat SamplePlugin::toOpenCVImage(const Image& img)
 }
 
 /*
-void SamplePlugin::btnPressed()
+void DualRobotPlugin::btnPressed()
 {
     QObject *obj = sender();
     if(obj==_btn0)
@@ -204,7 +204,7 @@ void SamplePlugin::btnPressed()
 }
 */
 
-void SamplePlugin::get25DImage()
+void DualRobotPlugin::get25DImage()
 {
     if (_framegrabber25D != NULL)
     {
@@ -237,7 +237,7 @@ void SamplePlugin::get25DImage()
     }
 }
 
-void SamplePlugin::getImage()
+void DualRobotPlugin::getImage()
 {
     if (_framegrabber != NULL)
     {
@@ -269,7 +269,7 @@ void SamplePlugin::getImage()
     }
 }
 
-void SamplePlugin::timer()
+void DualRobotPlugin::timer()
 {
     if(0 <= _step && _step < _path.size())
     {
@@ -279,12 +279,12 @@ void SamplePlugin::timer()
     }
 }
 
-void SamplePlugin::stateChangedListener(const State& state)
+void DualRobotPlugin::stateChangedListener(const State& state)
 {
     _state = state;
 }
 
-bool SamplePlugin::checkCollisions(Device::Ptr device, const State &state, const CollisionDetector &detector, const Q &q) {
+bool DualRobotPlugin::checkCollisions(Device::Ptr device, const State &state, const CollisionDetector &detector, const Q &q) {
     State testState;
     CollisionDetector::QueryResult data;
     bool colFrom;
@@ -306,7 +306,7 @@ bool SamplePlugin::checkCollisions(Device::Ptr device, const State &state, const
     return true;
 }
 
-void SamplePlugin::createPathRRTConnect(Q from, Q to,  double extend, double maxTime)
+void DualRobotPlugin::createPathRRTConnect(Q from, Q to,  double extend, double maxTime)
 {
     _device->setQ(from,_state);
     getRobWorkStudio()->setState(_state);

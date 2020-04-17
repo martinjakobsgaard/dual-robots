@@ -25,7 +25,7 @@
 // Qt
 #include <QTimer>
 
-#include "ui_SamplePlugin.h"
+#include "ui_DualRobotPlugin.h"
 
 #include <rws/RobWorkStudio.hpp>
 
@@ -62,15 +62,15 @@ using namespace cv;
 using namespace std::placeholders;
 
 
-class SamplePlugin: public rws::RobWorkStudioPlugin, private Ui::SamplePlugin
+class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
 {
     Q_OBJECT
     Q_INTERFACES( rws::RobWorkStudioPlugin )
     Q_PLUGIN_METADATA(IID "dk.sdu.mip.Robwork.RobWorkStudioPlugin/0.1" FILE "plugin.json")
     
     public:
-        SamplePlugin();
-        virtual ~SamplePlugin();
+        DualRobotPlugin();
+        virtual ~DualRobotPlugin();
 
         virtual void open(rw::models::WorkCell* workcell);
 

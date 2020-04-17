@@ -1,11 +1,11 @@
 plugin/CMakeCache.txt
 plugin/CMakeFiles/*
 plugin/cmake_install.cmake
-plugin/libs/Release/libRoViPlugin.so
+plugin/libs/Release/libDualRobotPlugin.so
 plugin/Makefile
 plugin/qrc_resources.cpp
-plugin/ui_SamplePlugin.h
+plugin/ui_DualRobotPlugin.h
 plugin/rwsettings.xml
-plugin/src/moc_SamplePlugin.cpp
-plugin/src/moc_SamplePlugin.cpp_parameters
+plugin/src/moc_DualRobotPlugin.cpp
+plugin/src/moc_DualRobotPlugin.cpp_parameters
 plugin/src/resources.qrc.depends

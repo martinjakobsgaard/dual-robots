@@ -15,7 +15,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0)
 
 # The name of the project.
-PROJECT(RoViPlugin)
+PROJECT(DualRobotPlugin)
 
 # Set C++ standard to C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -60,20 +60,20 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${ROOT}/libs/${CMAKE_BUILD_TYPE}" CACHE PATH
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${ROOT}/libs/${CMAKE_BUILD_TYPE}" CACHE PATH "Archive directory" FORCE)
 
 # If we want to use ui files add them here
-SET(UIS_FILES src/SamplePlugin.ui )
+SET(UIS_FILES src/DualRobotPlugin.ui )
 QT5_WRAP_UI(UIS_OUT_H ${UIS_FILES})
 
 #Need to add the current binary dir to the include directory because the generated source files are placed here
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # MOC
-QT5_WRAP_CPP(MocSrcFiles src/SamplePlugin.hpp)
+QT5_WRAP_CPP(MocSrcFiles src/DualRobotPlugin.hpp)
 
 # Rcc the files:
 QT5_ADD_RESOURCES(RccSrcFiles src/resources.qrc)
 
 # Add the source files to build
-SET(SrcFiles src/SamplePlugin.cpp ${UIS_OUT_H})
+SET(SrcFiles src/DualRobotPlugin.cpp ${UIS_OUT_H})
 
 # The shared library to build:
 ADD_LIBRARY(${PROJECT_NAME} MODULE ${SrcFiles} ${MocSrcFiles}  ${RccSrcFiles})
