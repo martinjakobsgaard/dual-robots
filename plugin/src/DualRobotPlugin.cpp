@@ -115,7 +115,6 @@ void DualRobotPlugin::open(WorkCell* workcell)
         }
 
         _device = _wc->findDevice("UR-6-85-5-A");
-        _step = -1;
     }
 }
 
@@ -130,17 +129,20 @@ void DualRobotPlugin::close()
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("TextureImage",textureFrame);
     }
+
     // Remove the background render
     Frame* bgFrame = _wc->findFrame("Background");
     if (bgFrame != NULL)
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("BackgroundImage",bgFrame);
     }
+
     // Delete the old framegrabber
     if (_framegrabber != NULL)
     {
         delete _framegrabber;
     }
+
     _framegrabber = NULL;
     _wc = NULL;
 }
@@ -151,53 +153,6 @@ Mat DualRobotPlugin::toOpenCVImage(const Image& img)
     res.data = (uchar*)img.getImageData();
     return res;
 }
-
-/*
-void DualRobotPlugin::btnPressed()
-{
-    QObject *obj = sender();
-    if(obj==_btn0)
-    {
-        //		log().info() << "Button 0\n";
-        //		// Toggle the timer on and off
-        //		if (!_timer25D->isActive())
-        //		    _timer25D->start(100); // run 10 Hz
-        //		else
-        //			_timer25D->stop();
-        _timer->stop();
-        rw::math::Math::seed();
-        double extend = 0.05;
-        double maxTime = 60;
-        Q from(6, 1.571, -1.572, -1.572, -1.572, 1.571, 0);
-        Q to(6, 1.847, -2.465, -1.602, -0.647, 1.571, 0); //From pose estimation
-        createPathRRTConnect(from, to, extend, maxTime);
-    }
-    else if(obj==_btn1)
-    {
-        log().info() << "Button 1\n";
-        // Toggle the timer on and off
-        if (!_timer->isActive())
-        {
-            _timer->start(100); // run 10 Hz
-            _step = 0;
-        }
-        else
-            _step = 0;
-    }
-    else if(obj==_spinBox)
-    {
-        log().info() << "spin value:" << _spinBox->value() << "\n";
-    }
-    else if( obj==_btn_im )
-    {
-        getImage();
-    }
-    else if( obj==_btn_scan )
-    {
-        get25DImage();
-    }
-}
-*/
 
 void DualRobotPlugin::get25DImage()
 {

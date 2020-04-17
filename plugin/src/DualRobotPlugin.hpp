@@ -79,7 +79,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         virtual void initialize();
 
     private slots:
-        //void btnPressed();
         void getImage();
         void get25DImage();
 
@@ -100,8 +99,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         std::vector<std::string> _cameras25D;
         Device::Ptr _device;
         QPath _path;
-        int _step;
-
 };
 
 #endif /*RINGONHOOKPLUGIN_HPP_*/
