@@ -57,28 +57,29 @@ void DualRobotPlugin::initialize()
 void DualRobotPlugin::open(WorkCell* workcell)
 {
     log().info() << "OPEN" << "\n";
-    _wc = workcell;
-    _state = _wc->getDefaultState();
+    rws_wc = workcell;
+    rws_state = rws_wc->getDefaultState();
 
     log().info() << workcell->getFilename() << "\n";
 
-    if (_wc != NULL)
+    if (rws_wc != NULL)
     {
         // Add the texture render to this workcell if there is a frame for texture
-        Frame* textureFrame = _wc->findFrame("MarkerTexture");
+        Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
         if (textureFrame != NULL)
         {
             getRobWorkStudio()->getWorkCellScene()->addRender("TextureImage",_textureRender,textureFrame);
         }
+
         // Add the background render to this workcell if there is a frame for texture
-        Frame* bgFrame = _wc->findFrame("Background");
+        Frame* bgFrame = rws_wc->findFrame("Background");
         if (bgFrame != NULL)
         {
             getRobWorkStudio()->getWorkCellScene()->addRender("BackgroundImage",_bgRender,bgFrame);
         }
 
         // Create a GLFrameGrabber if there is a camera frame with a Camera property set
-        Frame* cameraFrame = _wc->findFrame(_cameras[0]);
+        Frame* cameraFrame = rws_wc->findFrame(_cameras[0]);
         if (cameraFrame != NULL)
         {
             if (cameraFrame->getPropertyMap().has("Camera"))
@@ -96,7 +97,7 @@ void DualRobotPlugin::open(WorkCell* workcell)
             }
         }
 
-        Frame* cameraFrame25D = _wc->findFrame(_cameras25D[0]);
+        Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[0]);
         if (cameraFrame25D != NULL)
         {
             if (cameraFrame25D->getPropertyMap().has("Scanner25D"))
@@ -114,7 +115,8 @@ void DualRobotPlugin::open(WorkCell* workcell)
             }
         }
 
-        _device = _wc->findDevice("UR-6-85-5-A");
+        UR_left = rws_wc->findDevice("UR-6-85-5-A_Left");
+        UR_right = rws_wc->findDevice("UR-6-85-5-A_Right");
     }
 }
 
@@ -124,14 +126,14 @@ void DualRobotPlugin::close()
     log().info() << "CLOSE" << "\n";
 
     // Remove the texture render
-    Frame* textureFrame = _wc->findFrame("MarkerTexture");
+    Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
     if (textureFrame != NULL)
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("TextureImage",textureFrame);
     }
 
     // Remove the background render
-    Frame* bgFrame = _wc->findFrame("Background");
+    Frame* bgFrame = rws_wc->findFrame("Background");
     if (bgFrame != NULL)
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("BackgroundImage",bgFrame);
@@ -144,7 +146,7 @@ void DualRobotPlugin::close()
     }
 
     _framegrabber = NULL;
-    _wc = NULL;
+    rws_wc = NULL;
 }
 
 Mat DualRobotPlugin::toOpenCVImage(const Image& img)
@@ -161,8 +163,8 @@ void DualRobotPlugin::get25DImage()
         for( int i = 0; i < _cameras25D.size(); i++)
         {
             // Get the image as a RW image
-            Frame* cameraFrame25D = _wc->findFrame(_cameras25D[i]); // "Camera");
-            _framegrabber25D->grab(cameraFrame25D, _state);
+            Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[i]); // "Camera");
+            _framegrabber25D->grab(cameraFrame25D, rws_state);
 
             //const Image& image = _framegrabber->getImage();
 
@@ -194,8 +196,8 @@ void DualRobotPlugin::getImage()
         for( int i = 0; i < _cameras.size(); i++)
         {
             // Get the image as a RW image
-            Frame* cameraFrame = _wc->findFrame(_cameras[i]); // "Camera");
-            _framegrabber->grab(cameraFrame, _state);
+            Frame* cameraFrame = rws_wc->findFrame(_cameras[i]); // "Camera");
+            _framegrabber->grab(cameraFrame, rws_state);
 
             const rw::sensor::Image* rw_image = &(_framegrabber->getImage());
 
@@ -221,7 +223,7 @@ void DualRobotPlugin::getImage()
 
 void DualRobotPlugin::stateChangedListener(const State& state)
 {
-    _state = state;
+    rws_state = state;
 }
 
 bool DualRobotPlugin::checkCollisions(Device::Ptr device, const State &state, const CollisionDetector &detector, const Q &q) {
@@ -248,6 +250,7 @@ bool DualRobotPlugin::checkCollisions(Device::Ptr device, const State &state, co
 
 void DualRobotPlugin::createPathRRTConnect(Q from, Q to,  double extend, double maxTime)
 {
+    /*
     _device->setQ(from,_state);
     getRobWorkStudio()->setState(_state);
     CollisionDetector detector(_wc, ProximityStrategyFactory::makeDefaultCollisionStrategy());
@@ -284,4 +287,5 @@ void DualRobotPlugin::createPathRRTConnect(Q from, Q to,  double extend, double 
 
         _path=tempQ;
     }
+    */
 }

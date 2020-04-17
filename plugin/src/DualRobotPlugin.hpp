@@ -73,9 +73,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         virtual ~DualRobotPlugin();
 
         virtual void open(rw::models::WorkCell* workcell);
-
         virtual void close();
-
         virtual void initialize();
 
     private slots:
@@ -90,15 +88,15 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
     private:
         static cv::Mat toOpenCVImage(const rw::sensor::Image& img);
 
-        rw::models::WorkCell::Ptr _wc;
-        rw::kinematics::State _state;
+        rw::models::WorkCell::Ptr rws_wc;
+        rw::kinematics::State rws_state;
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
         rwlibs::simulation::GLFrameGrabber* _framegrabber;
         rwlibs::simulation::GLFrameGrabber25D* _framegrabber25D;
         std::vector<std::string> _cameras;
         std::vector<std::string> _cameras25D;
-        Device::Ptr _device;
-        QPath _path;
+        rw::models::Device::Ptr UR_left;
+        rw::models::Device::Ptr UR_right;
 };
 
 #endif /*RINGONHOOKPLUGIN_HPP_*/
