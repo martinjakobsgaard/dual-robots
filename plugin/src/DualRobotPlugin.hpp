@@ -67,7 +67,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
     Q_OBJECT
     Q_INTERFACES( rws::RobWorkStudioPlugin )
     Q_PLUGIN_METADATA(IID "dk.sdu.mip.Robwork.RobWorkStudioPlugin/0.1" FILE "plugin.json")
-    
+
     public:
         DualRobotPlugin();
         virtual ~DualRobotPlugin();
@@ -80,7 +80,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
     private slots:
         //void btnPressed();
-        void timer();
         void getImage();
         void get25DImage();
 
@@ -92,14 +91,11 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
     private:
         static cv::Mat toOpenCVImage(const rw::sensor::Image& img);
 
-        QTimer* _timer;
-        QTimer* _timer25D;
-
         rw::models::WorkCell::Ptr _wc;
         rw::kinematics::State _state;
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
         rwlibs::simulation::GLFrameGrabber* _framegrabber;
-        rwlibs::simulation::GLFrameGrabber25D* _framegrabber25D;    
+        rwlibs::simulation::GLFrameGrabber25D* _framegrabber25D;
         std::vector<std::string> _cameras;
         std::vector<std::string> _cameras25D;
         Device::Ptr _device;

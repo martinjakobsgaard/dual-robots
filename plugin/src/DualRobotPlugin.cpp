@@ -7,9 +7,6 @@ DualRobotPlugin::DualRobotPlugin():
 {
     setupUi(this);
 
-    _timer = new QTimer(this);
-    connect(_timer, SIGNAL(timeout()), this, SLOT(timer()));
-
     // now connect stuff from the ui component
     //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
     //connect(_btn_scan    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
@@ -127,8 +124,6 @@ void DualRobotPlugin::close()
 {
     log().info() << "CLOSE" << "\n";
 
-    // Stop the timer
-    _timer->stop();
     // Remove the texture render
     Frame* textureFrame = _wc->findFrame("MarkerTexture");
     if (textureFrame != NULL)
@@ -266,16 +261,6 @@ void DualRobotPlugin::getImage()
             unsigned int maxH = 640;
             //_label->setPixmap(p.scaled(maxW,maxH,Qt::KeepAspectRatio));
         }
-    }
-}
-
-void DualRobotPlugin::timer()
-{
-    if(0 <= _step && _step < _path.size())
-    {
-        _device->setQ(_path.at(_step),_state);
-        getRobWorkStudio()->setState(_state);
-        _step++;
     }
 }
 
