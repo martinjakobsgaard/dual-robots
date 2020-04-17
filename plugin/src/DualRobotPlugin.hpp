@@ -36,25 +36,6 @@
 
 #include <functional>
 
-using namespace rwlibs::opengl;
-using namespace rwlibs::simulation;
-
-using namespace std;
-using namespace rw::math;
-using namespace rw::pathplanning;
-using namespace rw::proximity;
-using namespace rw::trajectory;
-using namespace rwlibs::pathplanners;
-using namespace rwlibs::proximitystrategies;
-
-
-using namespace rws;
-
-using namespace cv;
-
-using namespace std::placeholders;
-
-
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
 {
     Q_OBJECT
@@ -75,8 +56,8 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         void stateChangedListener(const rw::kinematics::State& state);
 
-        bool checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const CollisionDetector &detector, const Q &q);
-        void createPathRRTConnect(Q from, Q to,  double extend, double maxTime);
+        bool checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q);
+        void createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime);
 
     private:
         static cv::Mat toOpenCVImage(const rw::sensor::Image& img);

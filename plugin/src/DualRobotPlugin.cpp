@@ -91,7 +91,7 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
                 std::istringstream iss (camParam, std::istringstream::in);
                 iss >> fovy >> width >> height;
                 // Create a frame grabber
-                _framegrabber = new GLFrameGrabber(width,height,fovy);
+                _framegrabber = new rwlibs::simulation::GLFrameGrabber(width,height,fovy);
                 rw::graphics::SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
                 _framegrabber->init(gldrawer);
             }
@@ -109,7 +109,7 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
                 std::istringstream iss (camParam, std::istringstream::in);
                 iss >> fovy >> width >> height;
                 // Create a frame grabber
-                _framegrabber25D = new GLFrameGrabber25D(width,height,fovy);
+                _framegrabber25D = new rwlibs::simulation::GLFrameGrabber25D(width,height,fovy);
                 rw::graphics::SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
                 _framegrabber25D->init(gldrawer);
             }
@@ -149,9 +149,9 @@ void DualRobotPlugin::close()
     rws_wc = NULL;
 }
 
-Mat DualRobotPlugin::toOpenCVImage(const rw::sensor::Image& img)
+cv::Mat DualRobotPlugin::toOpenCVImage(const rw::sensor::Image& img)
 {
-    Mat res(img.getHeight(),img.getWidth(), CV_8SC3);
+    cv::Mat res(img.getHeight(),img.getWidth(), CV_8SC3);
     res.data = (uchar*)img.getImageData();
     return res;
 }
@@ -205,9 +205,9 @@ void DualRobotPlugin::getImage()
             cv::Mat image = cv::Mat(rw_image->getHeight(), rw_image->getWidth(), CV_8UC3, (rw::sensor::Image*)rw_image->getImageData());
 
             // Convert to OpenCV image
-            Mat imflip, imflip_mat;
+            cv::Mat imflip, imflip_mat;
             cv::flip(image, imflip, 1);
-            cv::cvtColor( imflip, imflip_mat, COLOR_RGB2BGR );
+            cv::cvtColor( imflip, imflip_mat, cv::COLOR_RGB2BGR);
 
             cv::imwrite(_cameras[i] + ".png", imflip_mat );
 
@@ -226,10 +226,10 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
     rws_state = state;
 }
 
-bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const CollisionDetector &detector, const Q &q)
+bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
 {
     rw::kinematics::State testState;
-    CollisionDetector::QueryResult data;
+    rw::proximity::CollisionDetector::QueryResult data;
     bool colFrom;
 
     testState = state;
@@ -237,19 +237,19 @@ bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::
     colFrom = detector.inCollision(testState,&data);
     if (colFrom)
     {
-        cerr << "Configuration in collision: " << q << endl;
-        cerr << "Colliding frames: " << endl;
+        std::cout << "Configuration in collision: " << q << std::endl;
+        std::cout << "Colliding frames: " << std::endl;
         rw::kinematics::FramePairSet fps = data.collidingFrames;
         for (rw::kinematics::FramePairSet::iterator it = fps.begin(); it != fps.end(); it++)
         {
-            cerr << (*it).first->getName() << " " << (*it).second->getName() << endl;
+            std::cout << (*it).first->getName() << " " << (*it).second->getName() << std::endl;
         }
         return false;
     }
     return true;
 }
 
-void DualRobotPlugin::createPathRRTConnect(Q from, Q to,  double extend, double maxTime)
+void DualRobotPlugin::createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime)
 {
     /*
     _device->setQ(from,_state);
