@@ -36,11 +36,6 @@
 
 #include <functional>
 
-
-using namespace rw::common;
-using namespace rw::graphics;
-using namespace rw::kinematics;
-using namespace rw::loaders;
 using namespace rw::models;
 using namespace rw::sensor;
 using namespace rwlibs::opengl;
@@ -82,7 +77,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         void stateChangedListener(const rw::kinematics::State& state);
 
-        bool checkCollisions(Device::Ptr device, const State &state, const CollisionDetector &detector, const Q &q);
+        bool checkCollisions(Device::Ptr device, const rw::kinematics::State &state, const CollisionDetector &detector, const Q &q);
         void createPathRRTConnect(Q from, Q to,  double extend, double maxTime);
 
     private:
@@ -90,13 +85,15 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         rw::models::WorkCell::Ptr rws_wc;
         rw::kinematics::State rws_state;
+        rw::models::Device::Ptr UR_left;
+        rw::models::Device::Ptr UR_right;
+
+        // Misc
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
         rwlibs::simulation::GLFrameGrabber* _framegrabber;
         rwlibs::simulation::GLFrameGrabber25D* _framegrabber25D;
         std::vector<std::string> _cameras;
         std::vector<std::string> _cameras25D;
-        rw::models::Device::Ptr UR_left;
-        rw::models::Device::Ptr UR_right;
 };
 
 #endif /*RINGONHOOKPLUGIN_HPP_*/

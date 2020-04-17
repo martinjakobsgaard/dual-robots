@@ -41,7 +41,7 @@ void DualRobotPlugin::initialize()
     }
     else
     {
-        WorkCell::Ptr wc = WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene.wc.xml");
+        WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene.wc.xml");
 
         if (wc == nullptr)
         {
@@ -65,21 +65,21 @@ void DualRobotPlugin::open(WorkCell* workcell)
     if (rws_wc != NULL)
     {
         // Add the texture render to this workcell if there is a frame for texture
-        Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
+        rw::kinematics::Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
         if (textureFrame != NULL)
         {
             getRobWorkStudio()->getWorkCellScene()->addRender("TextureImage",_textureRender,textureFrame);
         }
 
         // Add the background render to this workcell if there is a frame for texture
-        Frame* bgFrame = rws_wc->findFrame("Background");
+        rw::kinematics::Frame* bgFrame = rws_wc->findFrame("Background");
         if (bgFrame != NULL)
         {
             getRobWorkStudio()->getWorkCellScene()->addRender("BackgroundImage",_bgRender,bgFrame);
         }
 
         // Create a GLFrameGrabber if there is a camera frame with a Camera property set
-        Frame* cameraFrame = rws_wc->findFrame(_cameras[0]);
+        rw::kinematics::Frame* cameraFrame = rws_wc->findFrame(_cameras[0]);
         if (cameraFrame != NULL)
         {
             if (cameraFrame->getPropertyMap().has("Camera"))
@@ -92,12 +92,12 @@ void DualRobotPlugin::open(WorkCell* workcell)
                 iss >> fovy >> width >> height;
                 // Create a frame grabber
                 _framegrabber = new GLFrameGrabber(width,height,fovy);
-                SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
+                rw::graphics::SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
                 _framegrabber->init(gldrawer);
             }
         }
 
-        Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[0]);
+        rw::kinematics::Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[0]);
         if (cameraFrame25D != NULL)
         {
             if (cameraFrame25D->getPropertyMap().has("Scanner25D"))
@@ -110,7 +110,7 @@ void DualRobotPlugin::open(WorkCell* workcell)
                 iss >> fovy >> width >> height;
                 // Create a frame grabber
                 _framegrabber25D = new GLFrameGrabber25D(width,height,fovy);
-                SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
+                rw::graphics::SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
                 _framegrabber25D->init(gldrawer);
             }
         }
@@ -126,14 +126,14 @@ void DualRobotPlugin::close()
     log().info() << "CLOSE" << "\n";
 
     // Remove the texture render
-    Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
+    rw::kinematics::Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
     if (textureFrame != NULL)
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("TextureImage",textureFrame);
     }
 
     // Remove the background render
-    Frame* bgFrame = rws_wc->findFrame("Background");
+    rw::kinematics::Frame* bgFrame = rws_wc->findFrame("Background");
     if (bgFrame != NULL)
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("BackgroundImage",bgFrame);
@@ -163,7 +163,7 @@ void DualRobotPlugin::get25DImage()
         for( int i = 0; i < _cameras25D.size(); i++)
         {
             // Get the image as a RW image
-            Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[i]); // "Camera");
+            rw::kinematics::Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[i]); // "Camera");
             _framegrabber25D->grab(cameraFrame25D, rws_state);
 
             //const Image& image = _framegrabber->getImage();
@@ -196,7 +196,7 @@ void DualRobotPlugin::getImage()
         for( int i = 0; i < _cameras.size(); i++)
         {
             // Get the image as a RW image
-            Frame* cameraFrame = rws_wc->findFrame(_cameras[i]); // "Camera");
+            rw::kinematics::Frame* cameraFrame = rws_wc->findFrame(_cameras[i]); // "Camera");
             _framegrabber->grab(cameraFrame, rws_state);
 
             const rw::sensor::Image* rw_image = &(_framegrabber->getImage());
@@ -221,13 +221,14 @@ void DualRobotPlugin::getImage()
     }
 }
 
-void DualRobotPlugin::stateChangedListener(const State& state)
+void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 {
     rws_state = state;
 }
 
-bool DualRobotPlugin::checkCollisions(Device::Ptr device, const State &state, const CollisionDetector &detector, const Q &q) {
-    State testState;
+bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const CollisionDetector &detector, const Q &q)
+{
+    rw::kinematics::State testState;
     CollisionDetector::QueryResult data;
     bool colFrom;
 
@@ -238,8 +239,8 @@ bool DualRobotPlugin::checkCollisions(Device::Ptr device, const State &state, co
     {
         cerr << "Configuration in collision: " << q << endl;
         cerr << "Colliding frames: " << endl;
-        FramePairSet fps = data.collidingFrames;
-        for (FramePairSet::iterator it = fps.begin(); it != fps.end(); it++)
+        rw::kinematics::FramePairSet fps = data.collidingFrames;
+        for (rw::kinematics::FramePairSet::iterator it = fps.begin(); it != fps.end(); it++)
         {
             cerr << (*it).first->getName() << " " << (*it).second->getName() << endl;
         }
