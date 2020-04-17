@@ -2,39 +2,30 @@
 #define SAMPLEPLUGIN_HPP
 
 // RobWork includes
-#include <rw/models/WorkCell.hpp>
+#include <rw/rw.hpp>
 #include <rw/kinematics/State.hpp>
+#include <rw/loaders/ImageLoader.hpp>
+#include <rw/loaders/WorkCellFactory.hpp>
+#include <rw/models/WorkCell.hpp>
+#include <rw/trajectory/LinearInterpolator.hpp>
+
 #include <rwlibs/opengl/RenderImage.hpp>
 #include <rwlibs/simulation/GLFrameGrabber.hpp>
 #include <rwlibs/simulation/GLFrameGrabber25D.hpp>
-
-#include <rw/rw.hpp>
 #include <rwlibs/pathplanners/rrt/RRTPlanner.hpp>
 #include <rwlibs/pathplanners/rrt/RRTQToQPlanner.hpp>
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
-#include <rw/trajectory/LinearInterpolator.hpp>
-
 
 // RobWorkStudio includes
-#include <RobWorkStudioConfig.hpp> // For RWS_USE_QT5 definition
+#include <rws/RobWorkStudio.hpp>
 #include <rws/RobWorkStudioPlugin.hpp>
+#include <RobWorkStudioConfig.hpp> // For RWS_USE_QT5 definition
 
 // OpenCV 3
 #include <opencv2/opencv.hpp>
 
 // Qt
-#include <QTimer>
-
 #include "ui_DualRobotPlugin.h"
-
-#include <rws/RobWorkStudio.hpp>
-
-#include <QPushButton>
-
-#include <rw/loaders/ImageLoader.hpp>
-#include <rw/loaders/WorkCellFactory.hpp>
-
-#include <functional>
 
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
 {
