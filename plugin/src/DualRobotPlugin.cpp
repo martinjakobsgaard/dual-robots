@@ -155,7 +155,7 @@ void DualRobotPlugin::get25DImage()
 {
     if (_framegrabber25D != NULL)
     {
-        for( int i = 0; i < _cameras25D.size(); i++)
+        for (unsigned int i = 0; i < _cameras25D.size(); i++)
         {
             // Get the image as a RW image
             rw::kinematics::Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[i]); // "Camera");
@@ -188,7 +188,7 @@ void DualRobotPlugin::getImage()
 {
     if (_framegrabber != NULL)
     {
-        for( int i = 0; i < _cameras.size(); i++)
+        for (unsigned int i = 0; i < _cameras.size(); i++)
         {
             // Get the image as a RW image
             rw::kinematics::Frame* cameraFrame = rws_wc->findFrame(_cameras[i]); // "Camera");
@@ -209,8 +209,8 @@ void DualRobotPlugin::getImage()
             // Show in QLabel
             QImage img(imflip.data, imflip.cols, imflip.rows, imflip.step, QImage::Format_RGB888);
             QPixmap p = QPixmap::fromImage(img);
-            unsigned int maxW = 480;
-            unsigned int maxH = 640;
+            //unsigned int maxW = 480;
+            //unsigned int maxH = 640;
             //_label->setPixmap(p.scaled(maxW,maxH,Qt::KeepAspectRatio));
         }
     }
