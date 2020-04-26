@@ -7,6 +7,7 @@ DualRobotPlugin::DualRobotPlugin():
 
     // Connect UI components to member functions
     connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
+    connect(ui_path_button, SIGNAL(pressed()), this, SLOT(path_button()));
     //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
@@ -33,6 +34,7 @@ void DualRobotPlugin::initialize()
     if (projectpath == NULL)
     {
         std::cerr << "DUALROBOTDIR environment variable not set! Perform \"export DUALROBOTDIR=/home/user/dual-robots/\", with the correct path." << std::endl;
+        set_status("Could not find DUALROBOTDIR environment variable to find workspace!");
     }
     else
     {
@@ -41,6 +43,7 @@ void DualRobotPlugin::initialize()
         if (wc == nullptr)
         {
             std::cerr << "Unable to autoload workcell! Maybe DUALROBOTDIR environment variable not set correctly?" << std::endl;
+            set_status("Could not find workspace using the DUALROBOTDIR environment variable!");
         }
         else
         {
@@ -226,6 +229,13 @@ void DualRobotPlugin::home_button()
     std::cout << "Home button pressed!" << std::endl;
 }
 
+void DualRobotPlugin::path_button()
+{
+    std::cout << "Path button pressed!" << std::endl;
+    set_status("Finding object path...");
+    find_object_path();
+}
+
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
 {
     rw::kinematics::State testState;
@@ -294,4 +304,9 @@ void DualRobotPlugin::createPathRRTConnect(rw::math::Q from, rw::math::Q to, dou
 void DualRobotPlugin::set_status(std::string status_text)
 {
     ui_status_label->setText(QString::fromStdString("Status: " + status_text));
+}
+
+void DualRobotPlugin::find_object_path()
+{
+    std::cout << "Yikers Matt needs to do some work!" << std::endl;
 }
