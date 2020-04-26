@@ -290,3 +290,8 @@ void DualRobotPlugin::createPathRRTConnect(rw::math::Q from, rw::math::Q to, dou
     }
     */
 }
+
+void DualRobotPlugin::set_status(std::string status_text)
+{
+    ui_status_label->setText(QString::fromStdString("Status: " + status_text));
+}

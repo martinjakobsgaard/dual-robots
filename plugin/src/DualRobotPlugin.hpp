@@ -60,6 +60,9 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rw::models::Device::Ptr UR_left;
         rw::models::Device::Ptr UR_right;
 
+        // Status text
+        void set_status(std::string status_text);
+
         // Misc
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
         rwlibs::simulation::GLFrameGrabber* _framegrabber;

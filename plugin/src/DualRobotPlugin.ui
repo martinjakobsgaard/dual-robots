@@ -19,7 +19,7 @@
      <enum>Qt::AlignTop</enum>
     </property>
     <item>
-     <widget class="QLabel" name="ui_sample_label">
+     <widget class="QLabel" name="ui_status_label">
       <property name="text">
        <string>Status: Ok</string>
       </property>
