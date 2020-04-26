@@ -73,7 +73,7 @@ QT5_WRAP_CPP(MocSrcFiles src/DualRobotPlugin.hpp)
 QT5_ADD_RESOURCES(RccSrcFiles src/resources.qrc)
 
 # Add the source files to build
-SET(SrcFiles src/DualRobotPlugin.cpp ${UIS_OUT_H})
+SET(SrcFiles src/DualRobotPlugin.cpp src/algos.cpp src/common.cpp ${UIS_OUT_H})
 
 # The shared library to build:
 ADD_LIBRARY(${PROJECT_NAME} MODULE ${SrcFiles} ${MocSrcFiles}  ${RccSrcFiles})
