@@ -14,6 +14,7 @@
 #include <rwlibs/simulation/GLFrameGrabber25D.hpp>
 #include <rwlibs/pathplanners/rrt/RRTPlanner.hpp>
 #include <rwlibs/pathplanners/rrt/RRTQToQPlanner.hpp>
+#include <rwlibs/pathplanners/rrt/RRTTree.hpp>
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
 
 // RobWorkStudio includes
@@ -26,6 +27,23 @@
 
 // Qt
 #include "ui_DualRobotPlugin.h"
+
+struct ObjQ
+{
+    double x;
+    double y;
+    double z;
+    double R;
+    double P;
+    double Y;
+};
+
+struct ObjPathQ
+{
+    ObjQ Q_obj = {0, 0, 0, 0, 0, 0};
+    rw::math::Q Q_left;
+    rw::math::Q Q_right;
+};
 
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
 {
@@ -63,6 +81,13 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         // Status text
         void set_status(std::string status_text);
+
+        // Task-specific variables
+        const ObjQ pick_loc = {0, 0, 0, 0, 0, 0};
+        const rw::math::Q pickQ_left = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
+        const rw::math::Q pickQ_right = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
+        const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
+        std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
 
         // Algorithms (big boy stuff)
         void find_object_path();

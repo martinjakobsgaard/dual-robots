@@ -308,5 +308,6 @@ void DualRobotPlugin::set_status(std::string status_text)
 
 void DualRobotPlugin::find_object_path()
 {
+    object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
     std::cout << "Yikers Matt needs to do some work!" << std::endl;
 }
