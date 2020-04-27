@@ -327,7 +327,7 @@ void DualRobotPlugin::find_object_path()
 
     bool succes = true;
 
-    while ((object_path_tree->getLast().getValue()-obj_placeQ).dist() > rrt_eps)
+    while ((object_path_tree->getLast().getValue().Q_obj-place_loc).dist() > rrt_eps)
     {
         if (iterations++ == rrt_maxiterations)
         {
@@ -337,20 +337,20 @@ void DualRobotPlugin::find_object_path()
         }
 
         // Sample new 6D task-space object pos
-        struct ObjQ newQ = {x_dist(eng), y_dist(eng), z_dist(eng), R_dist(eng), P_dist(eng), Y_dist(eng)};
+        struct ObjQ sampleQ = {x_dist(eng), y_dist(eng), z_dist(eng), R_dist(eng), P_dist(eng), Y_dist(eng)};
 
         // Check collision
 
         // Find closest point in tree
         rwlibs::pathplanners::RRTNode<ObjPathQ> *closest_Q = &(object_path_tree->getRoot());
-        double closest_dist = (closest_Q->getValue().Q_obj - newQ).dist();
+        double closest_dist = (closest_Q->getValue().Q_obj - sampleQ).dist();
 
         auto it = object_path_tree->getNodes();
         for (auto ptr = it.first; ptr < it.second; ptr++)
         {
             rwlibs::pathplanners::RRTNode<ObjPathQ> *pathQ = *ptr;
 
-            double dist = (pathQ->getValue().Q_obj - newQ).dist();
+            double dist = (pathQ->getValue().Q_obj - sampleQ).dist();
 
             if (dist < closest_dist)
             {
@@ -359,9 +359,8 @@ void DualRobotPlugin::find_object_path()
             }
         }
 
-        // Find direction
-
         // Find node to add
+        struct ObjQ newQ = closest_Q->getValue().Q_obj+((sampleQ-(closest_Q->getValue().Q_obj))/(sampleQ-(closest_Q->getValue().Q_obj)).dist())*rrt_eps;
 
         // Find robot configurations
         struct ObjPathQ new_node = {newQ, pickQ_left, pickQ_left};
@@ -382,12 +381,22 @@ void DualRobotPlugin::find_object_path()
     std::cout << "Yikers Matt needs to do some work!" << std::endl;
 }
 
+struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
+{
+    return {l.x+r.x, l.y+r.y, l.z+r.z, l.R+r.R, l.P+r.P, l.Y+r.Y};
+}
+
 struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r)
 {
     return {l.x-r.x, l.y-r.y, l.z-r.z, l.R-r.R, l.P-r.P, l.Y-r.Y};
 }
 
-struct ObjPathQ operator-(const struct ObjPathQ &l, const struct ObjPathQ &r)
+struct ObjQ operator*(const struct ObjQ &l, const double n)
 {
-    return {l.Q_obj-r.Q_obj, l.Q_left-r.Q_left, l.Q_right-r.Q_right};
+    return {l.x*n, l.y*n, l.z*n, l.R*n, l.P*n, l.Y*n};
+}
+
+struct ObjQ operator/(const struct ObjQ &l, const double n)
+{
+    return {l.x/n, l.y/n, l.z/n, l.R/n, l.P/n, l.Y/n};
 }

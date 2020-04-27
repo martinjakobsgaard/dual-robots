@@ -45,7 +45,10 @@ struct ObjQ
     double dist() const {return std::sqrt(x*x + y*y + z*z + R*R + P*P + Y*Y);};
 };
 
+struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r);
 struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r);
+struct ObjQ operator*(const struct ObjQ &l, const double n);
+struct ObjQ operator/(const struct ObjQ &l, const double n);
 
 struct ObjPathQ
 {
@@ -55,8 +58,6 @@ struct ObjPathQ
 
     double dist() const {return Q_obj.dist();};
 };
-
-struct ObjPathQ operator-(const struct ObjPathQ &l, const struct ObjPathQ &r);
 
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
 {
@@ -108,7 +109,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
 
-        const unsigned int rrt_maxiterations = 500000;
+        const unsigned int rrt_maxiterations = 5000;
         const double rrt_eps = 1; // Very large for testing only
 
         // Object pos limits
