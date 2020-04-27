@@ -375,7 +375,7 @@ void DualRobotPlugin::find_object_path()
     }
     else
     {
-        set_status("Didn't find path for object before max_iterations!");
+        set_status("Didn't find path for object before " + std::to_string(rrt_maxiterations) + " iterations!");
     }
 
     std::cout << "Yikers Matt needs to do some work!" << std::endl;
