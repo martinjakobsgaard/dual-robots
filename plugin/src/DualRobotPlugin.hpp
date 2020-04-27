@@ -28,6 +28,11 @@
 // Qt
 #include "ui_DualRobotPlugin.h"
 
+// Standard includes
+#include <array>
+#include <random>
+#include <utility>
+
 struct ObjQ
 {
     double x;
@@ -96,15 +101,23 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const rw::math::Q pickQ_right = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
         const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
 
-        const ObjQ place_loc = {1, 1, 1, 0, 0, 0};
+        const struct ObjQ place_loc = {2, 2, 2, 0, 0, 0};
         const rw::math::Q placeQ_left = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
         const rw::math::Q placeQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
-        const ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
+        const struct ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
 
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
 
-        const unsigned int rrt_maxiterations = 500;
-        const double rrt_eps = 0.1;
+        const unsigned int rrt_maxiterations = 500000;
+        const double rrt_eps = 1; // Very large for testing only
+
+        // Object pos limits
+        const std::pair<double, double> x_lim = {-5,5};
+        const std::pair<double, double> y_lim = {-5,5};
+        const std::pair<double, double> z_lim = {-5,5};
+        const std::pair<double, double> R_lim = {-M_PI_2, M_PI_2};
+        const std::pair<double, double> P_lim = {-M_PI_2 ,M_PI_2};
+        const std::pair<double, double> Y_lim = {-M_PI_2, M_PI_2};
 
         // Algorithms (big boy stuff)
         void find_object_path();
@@ -115,6 +128,10 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rwlibs::simulation::GLFrameGrabber25D* _framegrabber25D;
         std::vector<std::string> _cameras;
         std::vector<std::string> _cameras25D;
+
+        // Random engine
+        std::random_device rd;
+        std::mt19937 eng;
 };
 
 #endif /*RINGONHOOKPLUGIN_HPP_*/
