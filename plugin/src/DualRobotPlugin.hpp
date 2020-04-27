@@ -36,14 +36,22 @@ struct ObjQ
     double R;
     double P;
     double Y;
+
+    double dist() const {return std::sqrt(x*x + y*y + z*z + R*R + P*P + Y*Y);};
 };
+
+struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r);
 
 struct ObjPathQ
 {
     ObjQ Q_obj = {0, 0, 0, 0, 0, 0};
     rw::math::Q Q_left;
     rw::math::Q Q_right;
+
+    double dist() const {return Q_obj.dist();};
 };
+
+struct ObjPathQ operator-(const struct ObjPathQ &l, const struct ObjPathQ &r);
 
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
 {
@@ -87,7 +95,16 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const rw::math::Q pickQ_left = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
         const rw::math::Q pickQ_right = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
         const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
+
+        const ObjQ place_loc = {1, 1, 1, 0, 0, 0};
+        const rw::math::Q placeQ_left = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
+        const rw::math::Q placeQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
+        const ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
+
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
+
+        const unsigned int rrt_maxiterations = 500;
+        const double rrt_eps = 0.1;
 
         // Algorithms (big boy stuff)
         void find_object_path();

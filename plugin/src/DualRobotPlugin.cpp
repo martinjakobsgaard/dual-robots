@@ -308,6 +308,25 @@ void DualRobotPlugin::set_status(std::string status_text)
 
 void DualRobotPlugin::find_object_path()
 {
+    // Initialize tree with pick obj Q
     object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
+    //object_path_tree->add(obj_placeQ);
+    //const rwlibs::pathplanners::RRTNode<ObjPathQ> place = object_path_tree->getLast();
+
+    unsigned int iterations = 0;
+
+    while (((object_path_tree->getLast().getValue()-obj_placeQ).dist() < rrt_eps) && (iterations++ < rrt_maxiterations))
+        ;
+
     std::cout << "Yikers Matt needs to do some work!" << std::endl;
+}
+
+struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r)
+{
+    return {l.x-r.x, l.y-r.y, l.z-r.z, l.R-r.R, l.P-r.P, l.Y-r.Y};
+}
+
+struct ObjPathQ operator-(const struct ObjPathQ &l, const struct ObjPathQ &r)
+{
+    return {l.Q_obj-r.Q_obj, l.Q_left-r.Q_left, l.Q_right-r.Q_right};
 }
