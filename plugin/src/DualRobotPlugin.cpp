@@ -14,6 +14,8 @@ DualRobotPlugin::DualRobotPlugin():
 
     _cameras = {"Camera_Right", "Camera_Left"};
     _cameras25D = {"Scanner25D"};
+
+    eng = std::mt19937(rd());
 }
 
 DualRobotPlugin::~DualRobotPlugin()
@@ -308,6 +310,14 @@ void DualRobotPlugin::set_status(std::string status_text)
 
 void DualRobotPlugin::find_object_path()
 {
+    // Create distributions
+    std::uniform_real_distribution<> x_dist(x_lim.first, x_lim.second);
+    std::uniform_real_distribution<> y_dist(y_lim.first, y_lim.second);
+    std::uniform_real_distribution<> z_dist(z_lim.first, z_lim.second);
+    std::uniform_real_distribution<> R_dist(R_lim.first, R_lim.second);
+    std::uniform_real_distribution<> P_dist(P_lim.first, P_lim.second);
+    std::uniform_real_distribution<> Y_dist(Y_lim.first, Y_lim.second);
+
     // Initialize tree with pick obj Q
     object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
     //object_path_tree->add(obj_placeQ);
@@ -315,10 +325,65 @@ void DualRobotPlugin::find_object_path()
 
     unsigned int iterations = 0;
 
-    while (((object_path_tree->getLast().getValue()-obj_placeQ).dist() < rrt_eps) && (iterations++ < rrt_maxiterations))
-        ;
+    bool succes = true;
+
+    while ((object_path_tree->getLast().getValue().Q_obj-place_loc).dist() > rrt_eps)
+    {
+        if (iterations++ == rrt_maxiterations)
+        {
+            set_status("Didn't find object path before max iterations!");
+            succes = false;
+            break;
+        }
+
+        // Sample new 6D task-space object pos
+        struct ObjQ sampleQ = {x_dist(eng), y_dist(eng), z_dist(eng), R_dist(eng), P_dist(eng), Y_dist(eng)};
+
+        // Check collision
+
+        // Find closest point in tree
+        rwlibs::pathplanners::RRTNode<ObjPathQ> *closest_Q = &(object_path_tree->getRoot());
+        double closest_dist = (closest_Q->getValue().Q_obj - sampleQ).dist();
+
+        auto it = object_path_tree->getNodes();
+        for (auto ptr = it.first; ptr < it.second; ptr++)
+        {
+            rwlibs::pathplanners::RRTNode<ObjPathQ> *pathQ = *ptr;
+
+            double dist = (pathQ->getValue().Q_obj - sampleQ).dist();
+
+            if (dist < closest_dist)
+            {
+                closest_Q = pathQ;
+                closest_dist = dist;
+            }
+        }
+
+        // Find node to add
+        struct ObjQ newQ = closest_Q->getValue().Q_obj+((sampleQ-(closest_Q->getValue().Q_obj))/(sampleQ-(closest_Q->getValue().Q_obj)).dist())*rrt_eps;
+
+        // Find robot configurations
+        struct ObjPathQ new_node = {newQ, pickQ_left, pickQ_left};
+
+        // Add node to tree
+        object_path_tree->add(new_node, closest_Q);
+    }
+
+    if (succes)
+    {
+        set_status("Found path for object with " + std::to_string(iterations) + " iterations!");
+    }
+    else
+    {
+        set_status("Didn't find path for object before " + std::to_string(rrt_maxiterations) + " iterations!");
+    }
 
     std::cout << "Yikers Matt needs to do some work!" << std::endl;
+}
+
+struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
+{
+    return {l.x+r.x, l.y+r.y, l.z+r.z, l.R+r.R, l.P+r.P, l.Y+r.Y};
 }
 
 struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r)
@@ -326,7 +391,12 @@ struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r)
     return {l.x-r.x, l.y-r.y, l.z-r.z, l.R-r.R, l.P-r.P, l.Y-r.Y};
 }
 
-struct ObjPathQ operator-(const struct ObjPathQ &l, const struct ObjPathQ &r)
+struct ObjQ operator*(const struct ObjQ &l, const double n)
 {
-    return {l.Q_obj-r.Q_obj, l.Q_left-r.Q_left, l.Q_right-r.Q_right};
+    return {l.x*n, l.y*n, l.z*n, l.R*n, l.P*n, l.Y*n};
+}
+
+struct ObjQ operator/(const struct ObjQ &l, const double n)
+{
+    return {l.x/n, l.y/n, l.z/n, l.R/n, l.P/n, l.Y/n};
 }
