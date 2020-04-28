@@ -7,12 +7,15 @@ DualRobotPlugin::DualRobotPlugin():
 
     // Connect UI components to member functions
     connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
+    connect(ui_path_button, SIGNAL(pressed()), this, SLOT(path_button()));
     //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
 
     _cameras = {"Camera_Right", "Camera_Left"};
     _cameras25D = {"Scanner25D"};
+
+    eng = std::mt19937(rd());
 }
 
 DualRobotPlugin::~DualRobotPlugin()
@@ -33,6 +36,7 @@ void DualRobotPlugin::initialize()
     if (projectpath == NULL)
     {
         std::cerr << "DUALROBOTDIR environment variable not set! Perform \"export DUALROBOTDIR=/home/user/dual-robots/\", with the correct path." << std::endl;
+        set_status("Could not find DUALROBOTDIR environment variable to find workspace!");
     }
     else
     {
@@ -41,6 +45,7 @@ void DualRobotPlugin::initialize()
         if (wc == nullptr)
         {
             std::cerr << "Unable to autoload workcell! Maybe DUALROBOTDIR environment variable not set correctly?" << std::endl;
+            set_status("Could not find workspace using the DUALROBOTDIR environment variable!");
         }
         else
         {
@@ -155,7 +160,7 @@ void DualRobotPlugin::get25DImage()
 {
     if (_framegrabber25D != NULL)
     {
-        for( int i = 0; i < _cameras25D.size(); i++)
+        for (unsigned int i = 0; i < _cameras25D.size(); i++)
         {
             // Get the image as a RW image
             rw::kinematics::Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[i]); // "Camera");
@@ -188,7 +193,7 @@ void DualRobotPlugin::getImage()
 {
     if (_framegrabber != NULL)
     {
-        for( int i = 0; i < _cameras.size(); i++)
+        for (unsigned int i = 0; i < _cameras.size(); i++)
         {
             // Get the image as a RW image
             rw::kinematics::Frame* cameraFrame = rws_wc->findFrame(_cameras[i]); // "Camera");
@@ -209,8 +214,8 @@ void DualRobotPlugin::getImage()
             // Show in QLabel
             QImage img(imflip.data, imflip.cols, imflip.rows, imflip.step, QImage::Format_RGB888);
             QPixmap p = QPixmap::fromImage(img);
-            unsigned int maxW = 480;
-            unsigned int maxH = 640;
+            //unsigned int maxW = 480;
+            //unsigned int maxH = 640;
             //_label->setPixmap(p.scaled(maxW,maxH,Qt::KeepAspectRatio));
         }
     }
@@ -224,6 +229,13 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 void DualRobotPlugin::home_button()
 {
     std::cout << "Home button pressed!" << std::endl;
+}
+
+void DualRobotPlugin::path_button()
+{
+    std::cout << "Path button pressed!" << std::endl;
+    set_status("Finding object path...");
+    find_object_path();
 }
 
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
@@ -289,4 +301,102 @@ void DualRobotPlugin::createPathRRTConnect(rw::math::Q from, rw::math::Q to, dou
         _path=tempQ;
     }
     */
+}
+
+void DualRobotPlugin::set_status(std::string status_text)
+{
+    ui_status_label->setText(QString::fromStdString("Status: " + status_text));
+}
+
+void DualRobotPlugin::find_object_path()
+{
+    // Create distributions
+    std::uniform_real_distribution<> x_dist(x_lim.first, x_lim.second);
+    std::uniform_real_distribution<> y_dist(y_lim.first, y_lim.second);
+    std::uniform_real_distribution<> z_dist(z_lim.first, z_lim.second);
+    std::uniform_real_distribution<> R_dist(R_lim.first, R_lim.second);
+    std::uniform_real_distribution<> P_dist(P_lim.first, P_lim.second);
+    std::uniform_real_distribution<> Y_dist(Y_lim.first, Y_lim.second);
+
+    // Initialize tree with pick obj Q
+    object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
+    //object_path_tree->add(obj_placeQ);
+    //const rwlibs::pathplanners::RRTNode<ObjPathQ> place = object_path_tree->getLast();
+
+    unsigned int iterations = 0;
+
+    bool succes = true;
+
+    while ((object_path_tree->getLast().getValue().Q_obj-place_loc).dist() > rrt_eps)
+    {
+        if (iterations++ == rrt_maxiterations)
+        {
+            set_status("Didn't find object path before max iterations!");
+            succes = false;
+            break;
+        }
+
+        // Sample new 6D task-space object pos
+        struct ObjQ sampleQ = {x_dist(eng), y_dist(eng), z_dist(eng), R_dist(eng), P_dist(eng), Y_dist(eng)};
+
+        // Check collision
+
+        // Find closest point in tree
+        rwlibs::pathplanners::RRTNode<ObjPathQ> *closest_Q = &(object_path_tree->getRoot());
+        double closest_dist = (closest_Q->getValue().Q_obj - sampleQ).dist();
+
+        auto it = object_path_tree->getNodes();
+        for (auto ptr = it.first; ptr < it.second; ptr++)
+        {
+            rwlibs::pathplanners::RRTNode<ObjPathQ> *pathQ = *ptr;
+
+            double dist = (pathQ->getValue().Q_obj - sampleQ).dist();
+
+            if (dist < closest_dist)
+            {
+                closest_Q = pathQ;
+                closest_dist = dist;
+            }
+        }
+
+        // Find node to add
+        struct ObjQ newQ = closest_Q->getValue().Q_obj+((sampleQ-(closest_Q->getValue().Q_obj))/(sampleQ-(closest_Q->getValue().Q_obj)).dist())*rrt_eps;
+
+        // Find robot configurations
+        struct ObjPathQ new_node = {newQ, pickQ_left, pickQ_left};
+
+        // Add node to tree
+        object_path_tree->add(new_node, closest_Q);
+    }
+
+    if (succes)
+    {
+        set_status("Found path for object with " + std::to_string(iterations) + " iterations!");
+    }
+    else
+    {
+        set_status("Didn't find path for object before " + std::to_string(rrt_maxiterations) + " iterations!");
+    }
+
+    std::cout << "Yikers Matt needs to do some work!" << std::endl;
+}
+
+struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
+{
+    return {l.x+r.x, l.y+r.y, l.z+r.z, l.R+r.R, l.P+r.P, l.Y+r.Y};
+}
+
+struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r)
+{
+    return {l.x-r.x, l.y-r.y, l.z-r.z, l.R-r.R, l.P-r.P, l.Y-r.Y};
+}
+
+struct ObjQ operator*(const struct ObjQ &l, const double n)
+{
+    return {l.x*n, l.y*n, l.z*n, l.R*n, l.P*n, l.Y*n};
+}
+
+struct ObjQ operator/(const struct ObjQ &l, const double n)
+{
+    return {l.x/n, l.y/n, l.z/n, l.R/n, l.P/n, l.Y/n};
 }

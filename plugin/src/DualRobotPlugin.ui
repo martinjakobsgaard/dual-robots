@@ -19,9 +19,9 @@
      <enum>Qt::AlignTop</enum>
     </property>
     <item>
-     <widget class="QLabel" name="ui_sample_label">
+     <widget class="QLabel" name="ui_status_label">
       <property name="text">
-       <string>Sample label</string>
+       <string>Status: Ok</string>
       </property>
       <property name="textFormat">
        <enum>Qt::RichText</enum>
@@ -32,6 +32,13 @@
      <widget class="QPushButton" name="ui_home_button">
       <property name="text">
        <string>Home</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="ui_path_button">
+      <property name="text">
+       <string>Find object path</string>
       </property>
      </widget>
     </item>

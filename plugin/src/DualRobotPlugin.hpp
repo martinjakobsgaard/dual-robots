@@ -14,6 +14,7 @@
 #include <rwlibs/simulation/GLFrameGrabber25D.hpp>
 #include <rwlibs/pathplanners/rrt/RRTPlanner.hpp>
 #include <rwlibs/pathplanners/rrt/RRTQToQPlanner.hpp>
+#include <rwlibs/pathplanners/rrt/RRTTree.hpp>
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
 
 // RobWorkStudio includes
@@ -26,6 +27,37 @@
 
 // Qt
 #include "ui_DualRobotPlugin.h"
+
+// Standard includes
+#include <array>
+#include <random>
+#include <utility>
+
+struct ObjQ
+{
+    double x;
+    double y;
+    double z;
+    double R;
+    double P;
+    double Y;
+
+    double dist() const {return std::sqrt(x*x + y*y + z*z + R*R + P*P + Y*Y);};
+};
+
+struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r);
+struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r);
+struct ObjQ operator*(const struct ObjQ &l, const double n);
+struct ObjQ operator/(const struct ObjQ &l, const double n);
+
+struct ObjPathQ
+{
+    ObjQ Q_obj = {0, 0, 0, 0, 0, 0};
+    rw::math::Q Q_left;
+    rw::math::Q Q_right;
+
+    double dist() const {return Q_obj.dist();};
+};
 
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
 {
@@ -48,6 +80,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void stateChangedListener(const rw::kinematics::State& state);
 
         void home_button();
+        void path_button();
 
         bool checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q);
         void createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime);
@@ -60,12 +93,46 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rw::models::Device::Ptr UR_left;
         rw::models::Device::Ptr UR_right;
 
+        // Status text
+        void set_status(std::string status_text);
+
+        // Task-specific variables
+        const ObjQ pick_loc = {0, 0, 0, 0, 0, 0};
+        const rw::math::Q pickQ_left = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
+        const rw::math::Q pickQ_right = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
+        const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
+
+        const struct ObjQ place_loc = {2, 2, 2, 0, 0, 0};
+        const rw::math::Q placeQ_left = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
+        const rw::math::Q placeQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
+        const struct ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
+
+        std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
+
+        const unsigned int rrt_maxiterations = 5000;
+        const double rrt_eps = 1; // Very large for testing only
+
+        // Object pos limits
+        const std::pair<double, double> x_lim = {-5,5};
+        const std::pair<double, double> y_lim = {-5,5};
+        const std::pair<double, double> z_lim = {-5,5};
+        const std::pair<double, double> R_lim = {-M_PI_2, M_PI_2};
+        const std::pair<double, double> P_lim = {-M_PI_2 ,M_PI_2};
+        const std::pair<double, double> Y_lim = {-M_PI_2, M_PI_2};
+
+        // Algorithms (big boy stuff)
+        void find_object_path();
+
         // Misc
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
         rwlibs::simulation::GLFrameGrabber* _framegrabber;
         rwlibs::simulation::GLFrameGrabber25D* _framegrabber25D;
         std::vector<std::string> _cameras;
         std::vector<std::string> _cameras25D;
+
+        // Random engine
+        std::random_device rd;
+        std::mt19937 eng;
 };
 
 #endif /*RINGONHOOKPLUGIN_HPP_*/
