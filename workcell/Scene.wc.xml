@@ -10,14 +10,14 @@
     </Frame>
 
     <Frame name="pick_platform" refframe="Table" type="Fixed">
-        <RPY>0 0 0</RPY> <Pos>0.35 0 0.0</Pos>
+        <RPY>0 0 0</RPY> <Pos>0.35 0 0 </Pos>
         <Drawable name="PickPlatform" refframe="PickPlatform">
             <Polytope file="objects/pick_platform" />
         </Drawable>
     </Frame>
 
     <Frame name="place_platform" refframe="Table" type="Fixed">
-        <RPY>0 0 0</RPY> <Pos>-0.35 0 0.0</Pos>
+        <RPY>0 0 0</RPY> <Pos>-0.35 0 0 </Pos>
         <Drawable name="PickPlatform" refframe="PickPlatform">
             <Polytope file="objects/place_platform" />
         </Drawable>
@@ -39,12 +39,12 @@
     <!-- Devices -->
 
     <Frame name="URReference_Right" refframe="Table" type="Movable">
-        <RPY>180 0 0</RPY> <Pos>0 -0.6 0.02</Pos>
+        <RPY>0 0 0</RPY> <Pos>0 -0.6 0.02</Pos>
     </Frame>
     <Include file="devices/UR-6-85-5-A_Right/Device.wc.xml" />
 
     <Frame name="URReference_Left" refframe="Table" type="Movable">
-        <RPY>0 0 0</RPY> <Pos>0 0.6 0.02</Pos>
+        <RPY>180 0 0</RPY> <Pos>0 0.6 0.02</Pos>
     </Frame>
     <Include file="devices/UR-6-85-5-A_Left/Device.wc.xml" />
     
