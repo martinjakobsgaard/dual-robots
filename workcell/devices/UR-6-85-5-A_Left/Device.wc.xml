@@ -116,5 +116,5 @@
 
     <CollisionSetup file="CollisionSetup.prox.xml" />
 
-    <Q name="Home">1.571 -1.571 -1.571 -1.571 1.571 0 </Q>
+    <Q name="Home">3.142 -1.571 -1.571 -1.571 1.571 0 </Q>
 </SerialDevice>

@@ -2,31 +2,49 @@
     
     <!-- Objects -->
 
-    <!--
     <Frame name="Table" refframe="WORLD" type="Fixed">
-        <RPY>0 0 0</RPY> <Pos>0 0 -0.1</Pos>
-        <Drawable name="Table" refframe="Table">
-            <Polytope file="objects/table/Sigmund_table" />
-        </Drawable>
-    </Frame>
-    -->
-    
-    <Frame name="Table" refframe="WORLD" type="Fixed">
-        <RPY>0 0 0</RPY> <Pos>0 0 0</Pos>
+        <RPY>0 0 0</RPY> <Pos>0 0 -0.02 </Pos>
         <Drawable name="Table" refframe="Table">
             <Polytope file="objects/base_plane" />
         </Drawable>
     </Frame>
 
+    <Frame name="pick_platform" refframe="Table" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0.35 0 0 </Pos>
+        <Drawable name="PickPlatform" refframe="PickPlatform">
+            <Polytope file="objects/pick_platform" />
+        </Drawable>
+    </Frame>
+
+    <Frame name="place_platform" refframe="Table" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>-0.35 0 0 </Pos>
+        <Drawable name="PickPlatform" refframe="PickPlatform">
+            <Polytope file="objects/place_platform" />
+        </Drawable>
+    </Frame>
+
+    <Frame name="ObstacleLower" refframe="Table" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0 0 -0.2 </Pos>
+        <Drawable name="ObstacleLower" refframe="ObstacleLower">
+            <Polytope file="objects/obstacle" />
+        </Drawable>
+    </Frame>
+    
+    <Frame name="ObstacleUpper" refframe="Table" type="Fixed">
+        <RPY>0 0 0</RPY> <Pos>0 0 0.8 </Pos>
+        <Drawable name="ObstacleUpper" refframe="ObstacleUpper">
+            <Polytope file="objects/obstacle" />
+        </Drawable>
+    </Frame>
     <!-- Devices -->
 
     <Frame name="URReference_Right" refframe="Table" type="Movable">
-        <RPY>180 0 0</RPY> <Pos>0 -0.375 0.02</Pos>
+        <RPY>0 0 0</RPY> <Pos>0 -0.6 0.02</Pos>
     </Frame>
     <Include file="devices/UR-6-85-5-A_Right/Device.wc.xml" />
 
     <Frame name="URReference_Left" refframe="Table" type="Movable">
-        <RPY>0 0 0</RPY> <Pos>0 0.375 0.02</Pos>
+        <RPY>180 0 0</RPY> <Pos>0 0.6 0.02</Pos>
     </Frame>
     <Include file="devices/UR-6-85-5-A_Left/Device.wc.xml" />
     
