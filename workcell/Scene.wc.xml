@@ -30,6 +30,13 @@
         </Drawable>
     </Frame>
     
+    <Frame name="pick_object" refframe="pick_platform" type="Movable">
+        <RPY>0 0 0</RPY> <Pos>0 0 0.12 </Pos>
+        <Drawable name="PickObject" refframe="PickObject">
+            <Polytope file="objects/object_book" />
+        </Drawable>
+    </Frame>
+    
     <Frame name="ObstacleUpper" refframe="Table" type="Fixed">
         <RPY>0 0 0</RPY> <Pos>0 0 0.8 </Pos>
         <Drawable name="ObstacleUpper" refframe="ObstacleUpper">
