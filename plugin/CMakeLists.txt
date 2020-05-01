@@ -12,7 +12,7 @@
 #
 # Test CMake version
 #
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
 
 # The name of the project.
 PROJECT(DualRobotPlugin)
@@ -54,6 +54,10 @@ LINK_DIRECTORIES( ${ROBWORKSTUDIO_LIBRARY_DIRS} )
 # Use OpenCV 3
 find_package(OpenCV 3 REQUIRED)
 
+# Use pthreads
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # Set the output dir for generated libraries and binaries
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${ROOT}/bin/${CMAKE_BUILD_TYPE}" CACHE PATH "Runtime directory" FORCE)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${ROOT}/libs/${CMAKE_BUILD_TYPE}" CACHE PATH "Library directory" FORCE)
@@ -77,5 +81,5 @@ SET(SrcFiles src/DualRobotPlugin.cpp src/algos.cpp src/common.cpp ${UIS_OUT_H})
 
 # The shared library to build:
 ADD_LIBRARY(${PROJECT_NAME} MODULE ${SrcFiles} ${MocSrcFiles}  ${RccSrcFiles})
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ROBWORKSTUDIO_LIBRARIES} ${ROBWORK_LIBRARIES} ${OpenCV_LIBS})
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ROBWORKSTUDIO_LIBRARIES} ${ROBWORK_LIBRARIES} ${OpenCV_LIBS} Threads::Threads)
 

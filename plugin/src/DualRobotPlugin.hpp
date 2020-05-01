@@ -7,6 +7,7 @@
 #include <rw/loaders/ImageLoader.hpp>
 #include <rw/loaders/WorkCellFactory.hpp>
 #include <rw/models/WorkCell.hpp>
+#include <rw/pathplanning/QSampler.hpp>
 #include <rw/trajectory/LinearInterpolator.hpp>
 
 #include <rwlibs/opengl/RenderImage.hpp>
@@ -30,7 +31,9 @@
 
 // Standard includes
 #include <array>
+#include <chrono>
 #include <random>
+#include <thread>
 #include <utility>
 
 struct ObjQ
@@ -93,24 +96,32 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rw::models::Device::Ptr UR_left;
         rw::models::Device::Ptr UR_right;
 
+        rw::proximity::CollisionDetector::Ptr collisionDetector;
+
         // Status text
         void set_status(std::string status_text);
 
         // Task-specific variables
         const ObjQ pick_loc = {0, 0, 0, 0, 0, 0};
-        const rw::math::Q pickQ_left = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
-        const rw::math::Q pickQ_right = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
+        const rw::math::Q pickQ_left = rw::math::Q(6, -1.000, -1.238, 1.766, -0.528, 2.142, 0.000);
+        const rw::math::Q pickQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
         const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
 
         const struct ObjQ place_loc = {2, 2, 2, 0, 0, 0};
-        const rw::math::Q placeQ_left = rw::math::Q(6, 2, 2, 2, 2, 2, 2);
+        const rw::math::Q placeQ_left = rw::math::Q(6, -2.591, -1.238, 1.766, -0.528, 0.551, 0.000);
         const rw::math::Q placeQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
         const struct ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
 
+        std::unique_ptr<std::thread> rrt_thread;
+
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
 
-        const unsigned int rrt_maxiterations = 5000;
-        const double rrt_eps = 1; // Very large for testing only
+        const unsigned int rrt_maxiterations = 1500000;
+        const double rrt_eps = 0.1;
+
+        std::vector<ObjPathQ> object_path;
+
+        bool rrt_finished = false;
 
         // Object pos limits
         const std::pair<double, double> x_lim = {-5,5};
@@ -119,6 +130,10 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const std::pair<double, double> R_lim = {-M_PI_2, M_PI_2};
         const std::pair<double, double> P_lim = {-M_PI_2 ,M_PI_2};
         const std::pair<double, double> Y_lim = {-M_PI_2, M_PI_2};
+
+        // Misc methods
+        std::unique_ptr<std::thread> state_loop_thread;
+        void update_state_loop();
 
         // Algorithms (big boy stuff)
         void find_object_path();
