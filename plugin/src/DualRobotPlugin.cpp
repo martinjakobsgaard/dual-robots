@@ -340,7 +340,6 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 
 void DualRobotPlugin::attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object)
 {
-    std::cout << "Attaching object" << std::endl;
     // Get relative transform
     rw::math::Transform3D<> relT = object->wTf(state) * rw::math::inverse(grabber->wTf(state));
     //std::cout << relT << std::endl;
@@ -352,8 +351,6 @@ void DualRobotPlugin::attach_object(rw::kinematics::State &state, rw::kinematics
 
     // Set relative transform
     object->setTransform(relT, state);
-
-    std::cout << "Attached object" << std::endl;
 }
 
 void DualRobotPlugin::find_object_path()
@@ -383,7 +380,7 @@ void DualRobotPlugin::find_object_path()
     unsigned int iterations = 0;
     bool succes = true;
 
-    const auto Qdist = [](rw::math::Q a, rw::math::Q b)
+    const auto Qdist = [](const rw::math::Q &a, const rw::math::Q &b)
     {
         double l = 0;
         for (unsigned int i = 0; i < 6; i++)
