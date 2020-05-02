@@ -3,6 +3,7 @@
 
 // RobWork includes
 #include <rw/rw.hpp>
+#include <rw/kinematics/Kinematics.hpp>
 #include <rw/kinematics/State.hpp>
 #include <rw/loaders/ImageLoader.hpp>
 #include <rw/loaders/WorkCellFactory.hpp>
@@ -95,6 +96,9 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rw::kinematics::State rws_state;
         rw::models::Device::Ptr UR_left;
         rw::models::Device::Ptr UR_right;
+        rw::kinematics::Frame::Ptr TCP_left;
+        rw::kinematics::Frame::Ptr TCP_right;
+        rw::kinematics::MovableFrame::Ptr pick_object;
 
         rw::proximity::CollisionDetector::Ptr collisionDetector;
 
@@ -112,18 +116,31 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const rw::math::Q placeQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
         const struct ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
 
-        std::unique_ptr<std::thread> rrt_thread;
+        const rw::math::Transform3D<> grabT_left = rw::math::Transform3D<>(
+                rw::math::Vector3D<>(0.000, -0.103, 0.022),
+                rw::math::RPY<>(0.000, 0.000, -1.571)
+                );
+
+        std::thread rrt_thread;
 
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
 
-        const unsigned int rrt_maxiterations = 1500000;
-        const double rrt_eps = 0.1;
+        const unsigned int rrt_maxiterations = 15000;
+        const double rrt_eps = 0.5;
 
         std::vector<ObjPathQ> object_path;
 
         bool rrt_finished = false;
 
         // Object pos limits
+        const rw::models::Device::QBox bounds_left = {
+            rw::math::Q(6, -2.8, -2.0, 0.6, -2.0, 0.5, -1.5),
+            rw::math::Q(6, -0.8, -0.0, 2.0,  1.5, 2.5,  1.5)};
+
+        const rw::models::Device::QBox bounds_right = {
+            rw::math::Q(6, -1.1, -1.3, 1.5, -0.6, 2.0, -0.1),
+            rw::math::Q(6, -0.9, -1.1, 1.9, -0.3, 2.3, 0.1)};
+
         const std::pair<double, double> x_lim = {-5,5};
         const std::pair<double, double> y_lim = {-5,5};
         const std::pair<double, double> z_lim = {-5,5};
@@ -132,10 +149,11 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const std::pair<double, double> Y_lim = {-M_PI_2, M_PI_2};
 
         // Misc methods
-        std::unique_ptr<std::thread> state_loop_thread;
-        void update_state_loop();
+        std::thread state_loop_thread;
+        void update_state_loop(rw::kinematics::State *state);
 
         // Algorithms (big boy stuff)
+        void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);
         void find_object_path();
 
         // Misc
