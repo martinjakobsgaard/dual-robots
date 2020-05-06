@@ -42,6 +42,13 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QPushButton" name="ui_show_path_button">
+      <property name="text">
+       <string>Show path</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
  </widget>

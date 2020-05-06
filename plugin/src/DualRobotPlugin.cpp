@@ -8,6 +8,7 @@ DualRobotPlugin::DualRobotPlugin():
     // Connect UI components to member functions
     connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
     connect(ui_path_button, SIGNAL(pressed()), this, SLOT(path_button()));
+    connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
     //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
@@ -256,6 +257,15 @@ void DualRobotPlugin::path_button()
     rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this);
 }
 
+void DualRobotPlugin::show_path_button()
+{
+    std::cout << "Show path button pressed!" << std::endl;
+    set_status("Showing path...");
+    if (show_path_thread.joinable())
+        show_path_thread.join();
+    show_path_thread = std::thread(&DualRobotPlugin::show_object_path, this);
+}
+
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
 {
     rw::kinematics::State testState;
@@ -338,6 +348,20 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
     rrt_finished = false;
 }
 
+void DualRobotPlugin::show_object_path()
+{
+    attach_object(rws_state, TCP_left, pick_object);
+
+    for (const ObjPathQ &step : object_path)
+    {
+        UR_left->setQ(step.Q_left, rws_state);
+        getRobWorkStudio()->setState(rws_state);
+        std::this_thread::sleep_for(std::chrono::milliseconds(700));
+    }
+
+    set_status("Ok");
+}
+
 void DualRobotPlugin::attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object)
 {
     // Get relative transform
@@ -361,13 +385,12 @@ void DualRobotPlugin::find_object_path()
     UR_left->setQ(pickQ_left, state_clone);
 
     // Grab object with left robot
-    attach_object(state_clone, TCP_right, pick_object);
     attach_object(state_clone, TCP_left, pick_object);
 
     // Initialize tree with pick obj Q
     object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
 
-    //state_loop_thread = std::make_unique<std::thread>(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
@@ -389,8 +412,6 @@ void DualRobotPlugin::find_object_path()
     };
 
     rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
-
-    double record_dist = 9999;
 
     while (Qdist(object_path_tree->getLast().getValue().Q_left, placeQ_left) > rrt_eps)
     {
@@ -431,16 +452,7 @@ void DualRobotPlugin::find_object_path()
         // Find node to add
         rw::math::Q newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ))*rrt_eps;
 
-        double end_dist = Qdist(newQ, placeQ_left);
-
-        if (end_dist < record_dist)
-        {
-            record_dist = end_dist;
-        }
-
-        //std::cout << "record, endd, closest, rand, new = " << record_dist << end_dist << closest_Q->getValue().Q_left << randQ << newQ << std::endl;
-
-        // Check collision
+        // Check collision for left robot arm + object
         {
             rw::kinematics::State test_state = state_clone;
             UR_left->setQ(newQ, test_state);
@@ -449,6 +461,9 @@ void DualRobotPlugin::find_object_path()
                 continue;
             }
         }
+
+        // Find right UR Q with IK
+        // Q_right = 
 
         // Find robot configurations
         struct ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, pickQ_left};
@@ -462,6 +477,7 @@ void DualRobotPlugin::find_object_path()
         object_path_tree->add(obj_placeQ, &object_path_tree->getLast());
         object_path.clear();
         object_path_tree->getRootPath(object_path_tree->getLast(), object_path);
+        std::reverse(object_path.begin(), object_path.end());
         set_status("Found path for object with " + std::to_string(iterations) + " iterations!");
         std::cout << "Found path of length " << object_path.size() << std::endl;
     }
@@ -471,6 +487,12 @@ void DualRobotPlugin::find_object_path()
     }
 
     rrt_finished = true;
+
+    if (state_loop_thread.joinable())
+    {
+        state_loop_thread.join();
+    }
+
     std::cout << "Yikers Matt needs to do some work!" << std::endl;
 }
 
