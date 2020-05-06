@@ -1,7 +1,7 @@
 #include "DualRobotPlugin.hpp"
 
 DualRobotPlugin::DualRobotPlugin():
-    RobWorkStudioPlugin("DualRobotPluginUI", QIcon(":/pa_icon.png"))
+    RobWorkStudioPlugin("DualRobotPluginUI", QIcon(":/dr_icon.png"))
 {
     setupUi(this);
 
