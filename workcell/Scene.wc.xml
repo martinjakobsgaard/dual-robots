@@ -5,7 +5,7 @@
     <Frame name="Table" refframe="WORLD" type="Fixed">
         <RPY>0 0 0</RPY> <Pos>0 0 -0.02 </Pos>
         <Drawable name="Table" refframe="Table">
-            <Polytope file="objects/base_plane" />
+            <Polytope file="objects/table.obj" />
         </Drawable>
     </Frame>
 
@@ -33,7 +33,7 @@
     <Frame name="pick_object" refframe="pick_platform" type="Movable" daf="true">
         <RPY>0 0 0</RPY> <Pos>0 0 0.12 </Pos>
         <Drawable name="PickObject" refframe="PickObject">
-            <Polytope file="objects/object_book" />
+            <Polytope file="objects/object_book.obj" />
         </Drawable>
     </Frame>
     
