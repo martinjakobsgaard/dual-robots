@@ -496,6 +496,41 @@ void DualRobotPlugin::find_object_path()
     std::cout << "Yikers Matt needs to do some work!" << std::endl;
 }
 
+std::vector<rw::math::Q> getConfigurations(
+        const std::string nameGoal,
+        const std::string nameTcp,
+        rw::models::SerialDevice::Ptr robot,
+        rw::models::WorkCell::Ptr workcell,
+        rw::kinematics::State state)
+{
+    // Get names of frames
+    const std::string nameRobot     = robot->getName();
+    const std::string nameRobotBase = nameRobot + ".Base";
+    const std::string nameRobotTcp  = nameRobot + ".TCP";
+
+    // Find frames and check for existence
+    rw::kinematics::Frame* frameGoal        = workcell->findFrame(nameGoal);
+    rw::kinematics::Frame* frameTcp         = workcell->findFrame(nameTcp);
+    rw::kinematics::Frame* frameRobotBase   = workcell->findFrame(nameRobotBase);
+    rw::kinematics::Frame* frameRobotTcp    = workcell->findFrame(nameRobotTcp);
+
+    if(frameGoal==NULL || frameTcp==NULL || frameRobotBase==NULL || frameRobotTcp==NULL)
+        RW_THROW("Could not fine one or more devices...");
+
+    // Helper transformations
+    rw::math::Transform3D<> frameBaseTGoal      = rw::kinematics::Kinematics::frameTframe(frameRobotBase,   frameGoal,      state);
+    rw::math::Transform3D<> frameTcpTRobotTcp   = rw::kinematics::Kinematics::frameTframe(frameTcp,         frameRobotTcp,  state);
+
+    // Get grasp frame in robot tool frame
+    rw::math::Transform3D<> targetAt = frameBaseTGoal * frameTcpTRobotTcp;
+
+    // Create inverse kinematics solver
+    rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(robot, state) );
+
+    // Return solution configurations
+    return closedFormSolver->solve(targetAt, state);
+}
+
 struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
 {
     return {l.x+r.x, l.y+r.y, l.z+r.z, l.R+r.R, l.P+r.P, l.Y+r.Y};

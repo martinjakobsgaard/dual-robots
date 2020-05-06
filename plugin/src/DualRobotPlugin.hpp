@@ -3,6 +3,7 @@
 
 // RobWork includes
 #include <rw/rw.hpp>
+#include <rw/invkin.hpp>
 #include <rw/kinematics/Kinematics.hpp>
 #include <rw/kinematics/State.hpp>
 #include <rw/loaders/ImageLoader.hpp>
@@ -163,6 +164,12 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         // Algorithms (big boy stuff)
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);
         void find_object_path();
+        std::vector<rw::math::Q> getConfigurations(
+                const std::string nameGoal,
+                const std::string nameTcp,
+                rw::models::SerialDevice::Ptr robot,
+                rw::models::WorkCell::Ptr workcell,
+                rw::kinematics::State state);
 
         // Misc
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
