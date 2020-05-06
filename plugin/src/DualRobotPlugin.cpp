@@ -246,6 +246,9 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 void DualRobotPlugin::home_button()
 {
     std::cout << "Home button pressed!" << std::endl;
+    UR_left->setQ(homeQ_left, rws_state);
+    UR_right->setQ(homeQ_right, rws_state);
+    getRobWorkStudio()->setState(rws_state);
 }
 
 void DualRobotPlugin::path_button()
@@ -342,6 +345,7 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         UR_left->setQ(object_path_tree->getLast().getValue().Q_left, *state);
+        UR_right->setQ(object_path_tree->getLast().getValue().Q_right, *state);
         getRobWorkStudio()->setState(*state);
     }
 
@@ -355,6 +359,7 @@ void DualRobotPlugin::show_object_path()
     for (const ObjPathQ &step : object_path)
     {
         UR_left->setQ(step.Q_left, rws_state);
+        UR_right->setQ(step.Q_right, rws_state);
         getRobWorkStudio()->setState(rws_state);
         std::this_thread::sleep_for(std::chrono::milliseconds(700));
     }
@@ -379,10 +384,11 @@ void DualRobotPlugin::attach_object(rw::kinematics::State &state, rw::kinematics
 
 void DualRobotPlugin::find_object_path()
 {
+    // Set state to home
+    home_button();
+
     // Clone state to work with
     rw::kinematics::State state_clone = rws_state;
-
-    UR_left->setQ(pickQ_left, state_clone);
 
     // Grab object with left robot
     attach_object(state_clone, TCP_left, pick_object);
@@ -390,7 +396,7 @@ void DualRobotPlugin::find_object_path()
     // Initialize tree with pick obj Q
     object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
 
-    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    //state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
@@ -421,6 +427,11 @@ void DualRobotPlugin::find_object_path()
             succes = false;
             rrt_finished = true;
             break;
+        }
+
+        if (iterations%1000 == 0)
+        {
+            set_status("finding object path... (" + std::to_string(iterations) + ")");
         }
 
         // Sample new 6D task-space object pos
@@ -463,16 +474,41 @@ void DualRobotPlugin::find_object_path()
         }
 
         // Find right UR Q with IK
-        rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), rws_state);
-        rw::math::Transform3D<> targetT = frameBaseTObj * grabT_right;
+        std::vector<rw::math::Q> rightQs;
 
-        rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, rws_state) );
+        {
+            rw::kinematics::State test_state = state_clone;
+            UR_left->setQ(newQ, test_state);
+            rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), test_state);
+            rw::math::Transform3D<> targetT = frameBaseTObj * grabT_right;
 
-        // Return solution configurations
-        std::vector<rw::math::Q> rightQs = closedFormSolver->solve(targetT, rws_state);
+            rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, rws_state) );
+
+            // Return solution configurations
+            rightQs = closedFormSolver->solve(targetT, rws_state);
+        }
+
+        // Remove collision right UR Qs
+        std::vector<rw::math::Q> colfree_rightQs;
+
+        for (const auto &q : rightQs)
+        {
+            rw::kinematics::State test_state = state_clone;
+            UR_right->setQ(q, test_state);
+            if (!collisionDetector->inCollision(test_state, NULL, true)
+                && Qdist(q, closest_Q->getValue().Q_right) < rrt_eps)
+            {
+                colfree_rightQs.push_back(q);
+            }
+        }
+
+        if (colfree_rightQs.size() == 0)
+        {
+            continue;
+        }
 
         // Find robot configurations
-        struct ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, pickQ_left};
+        ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, colfree_rightQs.at(0)};
 
         // Add node to tree
         object_path_tree->add(new_node, closest_Q);

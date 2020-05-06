@@ -108,14 +108,17 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void set_status(std::string status_text);
 
         // Task-specific variables
+        const rw::math::Q homeQ_left = rw::math::Q(6, 3.142, -1.571, -1.571, -1.571, 1.571, 0.000);
+        const rw::math::Q homeQ_right = rw::math::Q(6, 0.000, -1.571, -1.571, -1.571, 1.571, 0.000);
+
         const ObjQ pick_loc = {0, 0, 0, 0, 0, 0};
         const rw::math::Q pickQ_left = rw::math::Q(6, -1.000, -1.238, 1.766, -0.528, 2.142, 0.000);
-        const rw::math::Q pickQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
+        const rw::math::Q pickQ_right = rw::math::Q(6, -2.591, -1.238, 1.766, -0.528, 0.551, 0.000);
         const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
 
         const ObjQ place_loc = {2, 2, 2, 0, 0, 0};
         const rw::math::Q placeQ_left = rw::math::Q(6, -2.591, -1.238, 1.766, -0.528, 0.551, 0.000);
-        const rw::math::Q placeQ_right = rw::math::Q(6, 1, 1, 1, 1, 1, 1);
+        const rw::math::Q placeQ_right = rw::math::Q(6, -1.000, -1.238, 1.766, -0.528, 2.142, 0.000);
         const ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
 
         const rw::math::Transform3D<> grabT_left = rw::math::Transform3D<>(
