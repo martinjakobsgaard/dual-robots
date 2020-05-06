@@ -57,6 +57,7 @@ void DualRobotPlugin::initialize()
 void DualRobotPlugin::open(rw::models::WorkCell* workcell)
 {
     log().info() << "OPEN" << "\n";
+    rw::math::Math::seed();
     rws_wc = workcell;
     rws_state = rws_wc->getDefaultState();
 
@@ -117,7 +118,20 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
 
         UR_left = rws_wc->findDevice("UR-6-85-5-A_Left");
         UR_right = rws_wc->findDevice("UR-6-85-5-A_Right");
+        TCP_left = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Left");
+        TCP_right = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Right");
 
+        pick_object = rws_wc->findFrame<rw::kinematics::MovableFrame>("pick_object");
+
+        if (TCP_left == nullptr)
+        {
+            std::cerr << "Couldn't find GraspTCP_left!" << std::endl;
+        }
+
+        if (pick_object == nullptr)
+        {
+            std::cerr << "Couldn't find pick_object!" << std::endl;
+        }
         collisionDetector = rw::common::ownedPtr(new rw::proximity::CollisionDetector(rws_wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy()));
     }
 }
@@ -237,7 +251,9 @@ void DualRobotPlugin::path_button()
 {
     std::cout << "Path button pressed!" << std::endl;
     set_status("Finding object path...");
-    rrt_thread = std::make_unique<std::thread>(&DualRobotPlugin::find_object_path, this);
+    if (rrt_thread.joinable())
+        rrt_thread.join();
+    rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this);
 }
 
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
@@ -310,39 +326,61 @@ void DualRobotPlugin::set_status(std::string status_text)
     ui_status_label->setText(QString::fromStdString("Status: " + status_text));
 }
 
-void DualRobotPlugin::update_state_loop()
+void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 {
     while (!rrt_finished)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        UR_left->setQ(object_path_tree->getLast().getValue().Q_left, rws_state);
-        getRobWorkStudio()->setState(rws_state);
+        UR_left->setQ(object_path_tree->getLast().getValue().Q_left, *state);
+        getRobWorkStudio()->setState(*state);
     }
 
     rrt_finished = false;
 }
 
+void DualRobotPlugin::attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object)
+{
+    // Get relative transform
+    rw::math::Transform3D<> relT = object->wTf(state) * rw::math::inverse(grabber->wTf(state));
+    //std::cout << relT << std::endl;
+
+    relT = grabT_left;
+
+    // Attach
+    object->attachTo(grabber.get(), state);
+
+    // Set relative transform
+    object->setTransform(relT, state);
+}
+
 void DualRobotPlugin::find_object_path()
 {
-    // Create distributions
-    std::uniform_real_distribution<> x_dist(x_lim.first, x_lim.second);
-    std::uniform_real_distribution<> y_dist(y_lim.first, y_lim.second);
-    std::uniform_real_distribution<> z_dist(z_lim.first, z_lim.second);
-    std::uniform_real_distribution<> R_dist(R_lim.first, R_lim.second);
-    std::uniform_real_distribution<> P_dist(P_lim.first, P_lim.second);
-    std::uniform_real_distribution<> Y_dist(Y_lim.first, Y_lim.second);
+    // Clone state to work with
+    rw::kinematics::State state_clone = rws_state;
+
+    UR_left->setQ(pickQ_left, state_clone);
+
+    // Grab object with left robot
+    attach_object(state_clone, TCP_right, pick_object);
+    attach_object(state_clone, TCP_left, pick_object);
 
     // Initialize tree with pick obj Q
     object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
-    //object_path_tree->add(obj_placeQ);
-    //const rwlibs::pathplanners::RRTNode<ObjPathQ> place = object_path_tree->getLast();
 
-    state_loop_thread = std::make_unique<std::thread>(&DualRobotPlugin::update_state_loop, this);
+    //state_loop_thread = std::make_unique<std::thread>(&DualRobotPlugin::update_state_loop, this, &state_clone);
+
+    // Create distributions for sampling
+    std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
+    std::uniform_real_distribution<double> q1d(bounds_left.first[1], bounds_left.second[1]);
+    std::uniform_real_distribution<double> q2d(bounds_left.first[2], bounds_left.second[2]);
+    std::uniform_real_distribution<double> q3d(bounds_left.first[3], bounds_left.second[3]);
+    std::uniform_real_distribution<double> q4d(bounds_left.first[4], bounds_left.second[4]);
+    std::uniform_real_distribution<double> q5d(bounds_left.first[5], bounds_left.second[5]);
 
     unsigned int iterations = 0;
     bool succes = true;
 
-    const auto Qdist = [](rw::math::Q a, rw::math::Q b)
+    const auto Qdist = [](const rw::math::Q &a, const rw::math::Q &b)
     {
         double l = 0;
         for (unsigned int i = 0; i < 6; i++)
@@ -350,10 +388,9 @@ void DualRobotPlugin::find_object_path()
         return std::sqrt(l);
     };
 
-    rw::models::Device::QBox bounds = {rw::math::Q(6, -1.1, -1.3, 1.5, -0.6, 2.0, -0.1), rw::math::Q(6, -0.9, -1.1, 1.9, -0.3, 2.3, 0.1)};
-    //rw::pathplanning::QConstraint::Ptr constraint = rw::pathplanning::QConstraint::makeBounds(bounds);
-    //rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeUniform(UR_left);
-    rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds);
+    rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
+
+    double record_dist = 9999;
 
     while (Qdist(object_path_tree->getLast().getValue().Q_left, placeQ_left) > rrt_eps)
     {
@@ -367,7 +404,8 @@ void DualRobotPlugin::find_object_path()
 
         // Sample new 6D task-space object pos
         //struct ObjQ sampleQ = {x_dist(eng), y_dist(eng), z_dist(eng), R_dist(eng), P_dist(eng), Y_dist(eng)};
-        rw::math::Q randQ = constrainedSampler->sample();
+        //rw::math::Q randQ = constrainedSampler->sample();
+        rw::math::Q randQ(6, q0d(eng), q1d(eng), q2d(eng), q3d(eng), q4d(eng), q5d(eng));
         //std::cout << randQ << std::endl;
 
         // Find closest point in tree
@@ -381,19 +419,30 @@ void DualRobotPlugin::find_object_path()
 
             double dist = Qdist(pathQ->getValue().Q_left, randQ);
 
-            if (dist < closest_dist)
+            if (dist <= closest_dist)
             {
                 closest_Q = pathQ;
                 closest_dist = dist;
             }
         }
 
+        rw::math::Q nearQ = closest_Q->getValue().Q_left;
+
         // Find node to add
-        rw::math::Q newQ = closest_Q->getValue().Q_left+((randQ-closest_Q->getValue().Q_left)/Qdist(randQ, closest_Q->getValue().Q_left))*rrt_eps;
+        rw::math::Q newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ))*rrt_eps;
+
+        double end_dist = Qdist(newQ, placeQ_left);
+
+        if (end_dist < record_dist)
+        {
+            record_dist = end_dist;
+        }
+
+        //std::cout << "record, endd, closest, rand, new = " << record_dist << end_dist << closest_Q->getValue().Q_left << randQ << newQ << std::endl;
 
         // Check collision
         {
-            rw::kinematics::State test_state = rws_state;
+            rw::kinematics::State test_state = state_clone;
             UR_left->setQ(newQ, test_state);
             if (collisionDetector->inCollision(test_state, NULL, true))
             {

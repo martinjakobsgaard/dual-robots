@@ -30,7 +30,7 @@
         </Drawable>
     </Frame>
     
-    <Frame name="pick_object" refframe="pick_platform" type="Movable">
+    <Frame name="pick_object" refframe="pick_platform" type="Movable" daf="true">
         <RPY>0 0 0</RPY> <Pos>0 0 0.12 </Pos>
         <Drawable name="PickObject" refframe="PickObject">
             <Polytope file="objects/object_book" />
