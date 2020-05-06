@@ -396,7 +396,7 @@ void DualRobotPlugin::find_object_path()
     // Initialize tree with pick obj Q
     object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
 
-    //state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
@@ -496,7 +496,8 @@ void DualRobotPlugin::find_object_path()
             rw::kinematics::State test_state = state_clone;
             UR_right->setQ(q, test_state);
             if (!collisionDetector->inCollision(test_state, NULL, true)
-                && Qdist(q, closest_Q->getValue().Q_right) < rrt_eps)
+                //&& Qdist(q, closest_Q->getValue().Q_right) < rrt_eps
+               )
             {
                 colfree_rightQs.push_back(q);
             }
