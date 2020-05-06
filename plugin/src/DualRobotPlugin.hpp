@@ -96,8 +96,8 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         rw::models::WorkCell::Ptr rws_wc;
         rw::kinematics::State rws_state;
-        rw::models::Device::Ptr UR_left;
-        rw::models::Device::Ptr UR_right;
+        rw::models::SerialDevice::Ptr UR_left;
+        rw::models::SerialDevice::Ptr UR_right;
         rw::kinematics::Frame::Ptr TCP_left;
         rw::kinematics::Frame::Ptr TCP_right;
         rw::kinematics::MovableFrame::Ptr pick_object;
@@ -164,12 +164,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         // Algorithms (big boy stuff)
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);
         void find_object_path();
-        std::vector<rw::math::Q> getConfigurations(
-                const std::string nameGoal,
-                const std::string nameTcp,
-                rw::models::SerialDevice::Ptr robot,
-                rw::models::WorkCell::Ptr workcell,
-                rw::kinematics::State state);
 
         // Misc
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;

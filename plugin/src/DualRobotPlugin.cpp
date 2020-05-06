@@ -117,8 +117,8 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
             }
         }
 
-        UR_left = rws_wc->findDevice("UR-6-85-5-A_Left");
-        UR_right = rws_wc->findDevice("UR-6-85-5-A_Right");
+        UR_left = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Left");
+        UR_right = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Right");
         TCP_left = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Left");
         TCP_right = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Right");
 
@@ -463,7 +463,13 @@ void DualRobotPlugin::find_object_path()
         }
 
         // Find right UR Q with IK
-        // Q_right = 
+        rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), rws_state);
+        rw::math::Transform3D<> targetT = frameBaseTObj * grabT_right;
+
+        rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, rws_state) );
+
+        // Return solution configurations
+        std::vector<rw::math::Q> rightQs = closedFormSolver->solve(targetT, rws_state);
 
         // Find robot configurations
         struct ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, pickQ_left};
@@ -493,42 +499,7 @@ void DualRobotPlugin::find_object_path()
         state_loop_thread.join();
     }
 
-    std::cout << "Yikers Matt needs to do some work!" << std::endl;
-}
-
-std::vector<rw::math::Q> getConfigurations(
-        const std::string nameGoal,
-        const std::string nameTcp,
-        rw::models::SerialDevice::Ptr robot,
-        rw::models::WorkCell::Ptr workcell,
-        rw::kinematics::State state)
-{
-    // Get names of frames
-    const std::string nameRobot     = robot->getName();
-    const std::string nameRobotBase = nameRobot + ".Base";
-    const std::string nameRobotTcp  = nameRobot + ".TCP";
-
-    // Find frames and check for existence
-    rw::kinematics::Frame* frameGoal        = workcell->findFrame(nameGoal);
-    rw::kinematics::Frame* frameTcp         = workcell->findFrame(nameTcp);
-    rw::kinematics::Frame* frameRobotBase   = workcell->findFrame(nameRobotBase);
-    rw::kinematics::Frame* frameRobotTcp    = workcell->findFrame(nameRobotTcp);
-
-    if(frameGoal==NULL || frameTcp==NULL || frameRobotBase==NULL || frameRobotTcp==NULL)
-        RW_THROW("Could not fine one or more devices...");
-
-    // Helper transformations
-    rw::math::Transform3D<> frameBaseTGoal      = rw::kinematics::Kinematics::frameTframe(frameRobotBase,   frameGoal,      state);
-    rw::math::Transform3D<> frameTcpTRobotTcp   = rw::kinematics::Kinematics::frameTframe(frameTcp,         frameRobotTcp,  state);
-
-    // Get grasp frame in robot tool frame
-    rw::math::Transform3D<> targetAt = frameBaseTGoal * frameTcpTRobotTcp;
-
-    // Create inverse kinematics solver
-    rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(robot, state) );
-
-    // Return solution configurations
-    return closedFormSolver->solve(targetAt, state);
+    std::cout << "Yikers Matt needs to do some work! O no" << std::endl;
 }
 
 struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
