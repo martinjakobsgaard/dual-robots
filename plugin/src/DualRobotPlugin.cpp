@@ -374,7 +374,7 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 
 void DualRobotPlugin::show_object_path()
 {
-    attach_object(rws_state, TCP_left, pick_object);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
 
     for (const ObjPathQ &step : object_path)
     {
@@ -384,7 +384,7 @@ void DualRobotPlugin::show_object_path()
         std::this_thread::sleep_for(std::chrono::milliseconds(700));
     }
 
-    set_status("Ok");
+    set_status("ok");
 }
 
 void DualRobotPlugin::optimize_object_path()
@@ -410,12 +410,12 @@ void DualRobotPlugin::optimize_object_path()
 
     optimized_object_path.push_back(object_path[object_path.size()-1]);
 
-    set_status("Ok");
+    set_status("ok");
 }
 
 void DualRobotPlugin::show_optimized_object_path()
 {
-    attach_object(rws_state, TCP_left, pick_object);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
 
     for (const ObjPathQ &step : optimized_object_path)
     {
@@ -425,22 +425,7 @@ void DualRobotPlugin::show_optimized_object_path()
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
     }
 
-    set_status("Ok");
-}
-
-void DualRobotPlugin::attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object)
-{
-    // Get relative transform
-    rw::math::Transform3D<> relT = object->wTf(state) * rw::math::inverse(grabber->wTf(state));
-    //std::cout << relT << std::endl;
-
-    relT = grabT_left;
-
-    // Attach
-    object->attachTo(grabber.get(), state);
-
-    // Set relative transform
-    object->setTransform(relT, state);
+    set_status("ok");
 }
 
 void DualRobotPlugin::find_object_path()
@@ -452,7 +437,8 @@ void DualRobotPlugin::find_object_path()
     rw::kinematics::State state_clone = rws_state;
 
     // Grab object with left robot
-    attach_object(state_clone, TCP_left, pick_object);
+    UR_left->setQ(obj_pickQ.Q_left, state_clone);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state_clone);
 
     // Initialize tree with pick obj Q
     object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
