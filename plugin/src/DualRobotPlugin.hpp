@@ -87,6 +87,8 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void home_button();
         void path_button();
         void show_path_button();
+        void optimize_path_button();
+        void show_optimized_path_button();
 
         bool checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q);
         void createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime);
@@ -113,12 +115,12 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         const ObjQ pick_loc = {0, 0, 0, 0, 0, 0};
         const rw::math::Q pickQ_left = rw::math::Q(6, -1.000, -1.238, 1.766, -0.528, 2.142, 0.000);
-        const rw::math::Q pickQ_right = rw::math::Q(6, -2.591, -1.238, 1.766, -0.528, 0.551, 0.000);
+        const rw::math::Q pickQ_right = rw::math::Q(6, -2.591, -1.238, 1.766, -0.528, 0.551, 3.142);
         const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
 
         const ObjQ place_loc = {2, 2, 2, 0, 0, 0};
         const rw::math::Q placeQ_left = rw::math::Q(6, -2.591, -1.238, 1.766, -0.528, 0.551, 0.000);
-        const rw::math::Q placeQ_right = rw::math::Q(6, -1.000, -1.238, 1.766, -0.528, 2.142, 0.000);
+        const rw::math::Q placeQ_right = rw::math::Q(6, -1.000, -1.238, 1.766, -0.528, 2.142, 3.142);
         const ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
 
         const rw::math::Transform3D<> grabT_left = rw::math::Transform3D<>(
@@ -139,6 +141,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const double rrt_eps = 0.3;
 
         std::vector<ObjPathQ> object_path;
+        std::vector<ObjPathQ> optimized_object_path;
 
         bool rrt_finished = false;
 
@@ -163,6 +166,10 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void update_state_loop(rw::kinematics::State *state);
         std::thread show_path_thread;
         void show_object_path();
+        std::thread optimize_path_thread;
+        void optimize_object_path();
+        std::thread show_optimized_path_thread;
+        void show_optimized_object_path();
 
         // Algorithms (big boy stuff)
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);

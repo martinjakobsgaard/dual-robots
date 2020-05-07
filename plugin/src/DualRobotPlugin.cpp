@@ -9,6 +9,8 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
     connect(ui_path_button, SIGNAL(pressed()), this, SLOT(path_button()));
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
+    connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
+    connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
     //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
@@ -254,7 +256,7 @@ void DualRobotPlugin::home_button()
 void DualRobotPlugin::path_button()
 {
     std::cout << "Path button pressed!" << std::endl;
-    set_status("Finding object path...");
+    set_status("finding object path...");
     if (rrt_thread.joinable())
         rrt_thread.join();
     rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this);
@@ -263,10 +265,28 @@ void DualRobotPlugin::path_button()
 void DualRobotPlugin::show_path_button()
 {
     std::cout << "Show path button pressed!" << std::endl;
-    set_status("Showing path...");
+    set_status("showing path...");
     if (show_path_thread.joinable())
         show_path_thread.join();
     show_path_thread = std::thread(&DualRobotPlugin::show_object_path, this);
+}
+
+void DualRobotPlugin::optimize_path_button()
+{
+    std::cout << "Optimize path button pressed!" << std::endl;
+    set_status("optimizing path...");
+    if (optimize_path_thread.joinable())
+        optimize_path_thread.join();
+    optimize_path_thread = std::thread(&DualRobotPlugin::optimize_object_path, this);
+}
+
+void DualRobotPlugin::show_optimized_path_button()
+{
+    std::cout << "Show optimized path button pressed!" << std::endl;
+    set_status("showing optimized path...");
+    if (show_optimized_path_thread.joinable())
+        show_optimized_path_thread.join();
+    show_optimized_path_thread = std::thread(&DualRobotPlugin::show_optimized_object_path, this);
 }
 
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
@@ -362,6 +382,47 @@ void DualRobotPlugin::show_object_path()
         UR_right->setQ(step.Q_right, rws_state);
         getRobWorkStudio()->setState(rws_state);
         std::this_thread::sleep_for(std::chrono::milliseconds(700));
+    }
+
+    set_status("Ok");
+}
+
+void DualRobotPlugin::optimize_object_path()
+{
+    const unsigned int lerp_points = 10;
+
+    const auto lerp = [](const rw::math::Q &a, const rw::math::Q &b, double t)
+    {
+        return (1 - t) * a + t * b;
+    };
+
+    for (unsigned int i = 0; i < object_path.size()-1; i++)
+    {
+        for (unsigned int j = 0; j < lerp_points; j++)
+        {
+            optimized_object_path.push_back(
+                    {{0,0,0,0,0,0},
+                    lerp(object_path[i].Q_left, object_path[i+1].Q_left, j/(double)lerp_points),
+                    lerp(object_path[i].Q_right, object_path[i+1].Q_right, j/(double)lerp_points)
+                    });
+        }
+    }
+
+    optimized_object_path.push_back(object_path[object_path.size()-1]);
+
+    set_status("Ok");
+}
+
+void DualRobotPlugin::show_optimized_object_path()
+{
+    attach_object(rws_state, TCP_left, pick_object);
+
+    for (const ObjPathQ &step : optimized_object_path)
+    {
+        UR_left->setQ(step.Q_left, rws_state);
+        UR_right->setQ(step.Q_right, rws_state);
+        getRobWorkStudio()->setState(rws_state);
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
     }
 
     set_status("Ok");
