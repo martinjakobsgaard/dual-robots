@@ -79,11 +79,11 @@
     <AccLimit refjoint="Joint4" max="120" />
     <AccLimit refjoint="Joint5" max="120" />
 
-    <Drawable name="flangeGeo" refframe="Base">
+    <!--<Drawable name="flangeGeo" refframe="Base">
         <RPY> 0 90 180</RPY> <Pos> 0 0 0.003</Pos>
         <Polytope file="geometry/robotFlange" />
-    </Drawable>
-    <Drawable name="flangeGeo" refframe="Base">
+        </Drawable>-->
+    <Drawable name="BaseGeo" refframe="Base">
         <RPY> 0 90 180</RPY> <Pos> 0 0 0.0030</Pos>
         <Polytope file="geometry/base" />
     </Drawable>
