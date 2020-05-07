@@ -412,8 +412,18 @@ void DualRobotPlugin::find_object_path()
     const auto Qdist = [](const rw::math::Q &a, const rw::math::Q &b)
     {
         double l = 0;
+        /*
         for (unsigned int i = 0; i < 6; i++)
             l += std::pow(a[i]-b[i], 2);
+        */
+
+        l = std::pow((a[0]-b[0])*(1.0),2)+
+            std::pow((a[1]-b[1])*(0.8),2)+
+            std::pow((a[2]-b[2])*(0.6),2)+
+            std::pow((a[3]-b[3])*(0.4),2)+
+            std::pow((a[4]-b[4])*(0.3),2)+
+            std::pow((a[5]-b[5])*(0.2),2);
+
         return std::sqrt(l);
     };
 
@@ -496,7 +506,7 @@ void DualRobotPlugin::find_object_path()
             rw::kinematics::State test_state = state_clone;
             UR_right->setQ(q, test_state);
             if (!collisionDetector->inCollision(test_state, NULL, true)
-                //&& Qdist(q, closest_Q->getValue().Q_right) < rrt_eps
+                && Qdist(q, closest_Q->getValue().Q_right) < rrt_eps*5
                )
             {
                 colfree_rightQs.push_back(q);
@@ -507,6 +517,11 @@ void DualRobotPlugin::find_object_path()
         {
             continue;
         }
+
+        // Sort collisionfree right Qs based on Q-distance to last rightQ
+        std::sort(colfree_rightQs.begin(), colfree_rightQs.end(),
+                [&closest_Q, &Qdist](const rw::math::Q &l, const rw::math::Q &r){return Qdist(closest_Q->getValue().Q_right, l) < Qdist(closest_Q->getValue().Q_right, r);}
+                );
 
         // Find robot configurations
         ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, colfree_rightQs.at(0)};
