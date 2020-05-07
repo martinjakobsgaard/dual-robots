@@ -407,7 +407,7 @@ void DualRobotPlugin::find_object_path()
     std::uniform_real_distribution<double> q5d(bounds_left.first[5], bounds_left.second[5]);
 
     unsigned int iterations = 0;
-    bool succes = true;
+    bool success = true;
 
     const auto Qdist = [](const rw::math::Q &a, const rw::math::Q &b)
     {
@@ -424,7 +424,7 @@ void DualRobotPlugin::find_object_path()
         if (iterations++ == rrt_maxiterations)
         {
             set_status("Didn't find object path before max iterations!");
-            succes = false;
+            success = false;
             rrt_finished = true;
             break;
         }
@@ -515,7 +515,7 @@ void DualRobotPlugin::find_object_path()
         object_path_tree->add(new_node, closest_Q);
     }
 
-    if (succes)
+    if (success)
     {
         object_path_tree->add(obj_placeQ, &object_path_tree->getLast());
         object_path.clear();
