@@ -24,9 +24,9 @@
     </Frame>
 
     <Frame name="ObstacleLower" refframe="Table" type="Fixed">
-        <RPY>0 0 0</RPY> <Pos>0 0 -0.2 </Pos>
+        <RPY>0 0 0</RPY> <Pos>0 0 0.35 </Pos>
         <Drawable name="ObstacleLower" refframe="ObstacleLower">
-            <Polytope file="objects/obstacle" />
+            <Polytope file="objects/obstacle.obj" />
         </Drawable>
     </Frame>
     
@@ -38,9 +38,9 @@
     </Frame>
     
     <Frame name="ObstacleUpper" refframe="Table" type="Fixed">
-        <RPY>0 0 0</RPY> <Pos>0 0 0.8 </Pos>
+        <RPY>0 0 0</RPY> <Pos>0 0 1 </Pos>
         <Drawable name="ObstacleUpper" refframe="ObstacleUpper">
-            <Polytope file="objects/obstacle" />
+            <Polytope file="objects/obstacle.obj" />
         </Drawable>
     </Frame>
     <!-- Devices -->
