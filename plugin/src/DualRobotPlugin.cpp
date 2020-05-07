@@ -506,7 +506,7 @@ void DualRobotPlugin::find_object_path()
             rw::kinematics::State test_state = state_clone;
             UR_right->setQ(q, test_state);
             if (!collisionDetector->inCollision(test_state, NULL, true)
-                && Qdist(q, closest_Q->getValue().Q_right) < rrt_eps*5
+                && Qdist(q, closest_Q->getValue().Q_right) < rrt_eps*3
                )
             {
                 colfree_rightQs.push_back(q);
