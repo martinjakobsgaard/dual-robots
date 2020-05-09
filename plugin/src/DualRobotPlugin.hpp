@@ -12,9 +12,6 @@
 #include <rw/pathplanning/QSampler.hpp>
 #include <rw/trajectory/LinearInterpolator.hpp>
 
-#include <rwlibs/opengl/RenderImage.hpp>
-#include <rwlibs/simulation/GLFrameGrabber.hpp>
-#include <rwlibs/simulation/GLFrameGrabber25D.hpp>
 #include <rwlibs/pathplanners/rrt/RRTPlanner.hpp>
 #include <rwlibs/pathplanners/rrt/RRTQToQPlanner.hpp>
 #include <rwlibs/pathplanners/rrt/RRTTree.hpp>
@@ -24,9 +21,6 @@
 #include <rws/RobWorkStudio.hpp>
 #include <rws/RobWorkStudioPlugin.hpp>
 #include <RobWorkStudioConfig.hpp> // For RWS_USE_QT5 definition
-
-// OpenCV 3
-#include <opencv2/opencv.hpp>
 
 // Qt
 #include "ui_DualRobotPlugin.h"
@@ -79,9 +73,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         virtual void initialize();
 
     private slots:
-        void getImage();
-        void get25DImage();
-
         void stateChangedListener(const rw::kinematics::State& state);
 
         void home_button();
@@ -94,8 +85,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime);
 
     private:
-        static cv::Mat toOpenCVImage(const rw::sensor::Image& img);
-
         rw::models::WorkCell::Ptr rws_wc;
         rw::kinematics::State rws_state;
         rw::models::SerialDevice::Ptr UR_left;
@@ -175,13 +164,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);
         void find_object_path();
         double Qdist(const rw::math::Q &a, const rw::math::Q &b) const;
-
-        // Misc
-        rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
-        rwlibs::simulation::GLFrameGrabber* _framegrabber;
-        rwlibs::simulation::GLFrameGrabber25D* _framegrabber25D;
-        std::vector<std::string> _cameras;
-        std::vector<std::string> _cameras25D;
 
         // Random engine
         std::random_device rd;
