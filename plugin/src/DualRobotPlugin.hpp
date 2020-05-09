@@ -92,6 +92,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rw::kinematics::Frame::Ptr TCP_left;
         rw::kinematics::Frame::Ptr TCP_right;
         rw::kinematics::MovableFrame::Ptr pick_object;
+        rw::kinematics::Frame::Ptr pick_platform;
 
         rw::proximity::CollisionDetector::Ptr collisionDetector;
 
@@ -120,6 +121,11 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const rw::math::Transform3D<> grabT_right = rw::math::Transform3D<>(
                 rw::math::Vector3D<>(0.000, -0.170, 0.100),
                 rw::math::RPY<>(0.000, 0.000, -1.571)
+                );
+
+        const rw::math::Transform3D<> pickT = rw::math::Transform3D<>(
+                rw::math::Vector3D<>(0.000, 0.000, 0.120),
+                rw::math::RPY<>(0.000, 0.000, 0.000)
                 );
 
         std::thread rrt_thread;

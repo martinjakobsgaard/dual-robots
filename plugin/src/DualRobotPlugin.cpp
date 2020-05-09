@@ -65,8 +65,9 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
         UR_right = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Right");
         TCP_left = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Left");
         TCP_right = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Right");
-
+        
         pick_object = rws_wc->findFrame<rw::kinematics::MovableFrame>("pick_object");
+        pick_platform = rws_wc->findFrame<rw::kinematics::Frame>("pick_platform");
 
         if (TCP_left == nullptr)
         {
@@ -109,6 +110,9 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 
 void DualRobotPlugin::home_button()
 {
+    pick_object->attachTo(pick_platform.get(), rws_state);
+    pick_object->moveTo(pickT, rws_state);
+
     UR_left->setQ(homeQ_left, rws_state);
     UR_right->setQ(homeQ_right, rws_state);
     getRobWorkStudio()->setState(rws_state);
@@ -231,6 +235,7 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 
 void DualRobotPlugin::show_object_path()
 {
+    UR_left->setQ(pickQ_left, rws_state);
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
 
     for (const ObjPathQ &step : object_path)
@@ -296,6 +301,7 @@ void DualRobotPlugin::optimize_object_path()
 
 void DualRobotPlugin::show_optimized_object_path()
 {
+    UR_left->setQ(pickQ_left, rws_state);
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
 
     for (const ObjPathQ &step : optimized_object_path)
