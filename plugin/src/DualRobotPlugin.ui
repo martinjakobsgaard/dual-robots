@@ -21,7 +21,7 @@
     <item>
      <widget class="QLabel" name="ui_status_label">
       <property name="text">
-       <string>Status: Ok</string>
+       <string>Status: ok</string>
       </property>
       <property name="textFormat">
        <enum>Qt::RichText</enum>
