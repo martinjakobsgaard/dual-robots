@@ -11,18 +11,18 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
     //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
 
-    _framegrabber = NULL;
+    //_framegrabber = NULL;
 
-    _cameras = {"Camera_Right", "Camera_Left"};
-    _cameras25D = {"Scanner25D"};
+    //_cameras = {"Camera_Right", "Camera_Left"};
+    //_cameras25D = {"Scanner25D"};
 
     eng = std::mt19937(rd());
 }
 
 DualRobotPlugin::~DualRobotPlugin()
 {
-    delete _textureRender;
-    delete _bgRender;
+    //delete _textureRender;
+    //delete _bgRender;
 }
 
 void DualRobotPlugin::initialize()
@@ -66,6 +66,7 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
 
     if (rws_wc != NULL)
     {
+        /*
         // Add the texture render to this workcell if there is a frame for texture
         rw::kinematics::Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
         if (textureFrame != NULL)
@@ -79,7 +80,8 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
         {
             getRobWorkStudio()->getWorkCellScene()->addRender("BackgroundImage",_bgRender,bgFrame);
         }
-
+        */
+        /*
         // Create a GLFrameGrabber if there is a camera frame with a Camera property set
         rw::kinematics::Frame* cameraFrame = rws_wc->findFrame(_cameras[0]);
         if (cameraFrame != NULL)
@@ -116,6 +118,7 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
                 _framegrabber25D->init(gldrawer);
             }
         }
+        */
 
         UR_left = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Left");
         UR_right = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Right");
@@ -156,23 +159,27 @@ void DualRobotPlugin::close()
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("BackgroundImage",bgFrame);
     }
 
+    /*
     // Delete the old framegrabber
     if (_framegrabber != NULL)
     {
         delete _framegrabber;
     }
-
     _framegrabber = NULL;
+    */
+
     rws_wc = NULL;
 }
 
+/*
 cv::Mat DualRobotPlugin::toOpenCVImage(const rw::sensor::Image& img)
 {
     cv::Mat res(img.getHeight(),img.getWidth(), CV_8SC3);
     res.data = (uchar*)img.getImageData();
     return res;
 }
-
+*/
+/*
 void DualRobotPlugin::get25DImage()
 {
     if (_framegrabber25D != NULL)
@@ -205,7 +212,8 @@ void DualRobotPlugin::get25DImage()
         }
     }
 }
-
+*/
+/*
 void DualRobotPlugin::getImage()
 {
     if (_framegrabber != NULL)
@@ -237,6 +245,7 @@ void DualRobotPlugin::getImage()
         }
     }
 }
+*/
 
 void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 {
