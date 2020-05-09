@@ -12,18 +12,12 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
     connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
 
-    //_framegrabber = NULL;
-
-    //_cameras = {"Camera_Right", "Camera_Left"};
-    //_cameras25D = {"Scanner25D"};
-
+    // Create random engine
     eng = std::mt19937(rd());
 }
 
 DualRobotPlugin::~DualRobotPlugin()
 {
-    //delete _textureRender;
-    //delete _bgRender;
 }
 
 void DualRobotPlugin::initialize()
@@ -67,60 +61,6 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
 
     if (rws_wc != NULL)
     {
-        /*
-        // Add the texture render to this workcell if there is a frame for texture
-        rw::kinematics::Frame* textureFrame = rws_wc->findFrame("MarkerTexture");
-        if (textureFrame != NULL)
-        {
-            getRobWorkStudio()->getWorkCellScene()->addRender("TextureImage",_textureRender,textureFrame);
-        }
-
-        // Add the background render to this workcell if there is a frame for texture
-        rw::kinematics::Frame* bgFrame = rws_wc->findFrame("Background");
-        if (bgFrame != NULL)
-        {
-            getRobWorkStudio()->getWorkCellScene()->addRender("BackgroundImage",_bgRender,bgFrame);
-        }
-        */
-        /*
-        // Create a GLFrameGrabber if there is a camera frame with a Camera property set
-        rw::kinematics::Frame* cameraFrame = rws_wc->findFrame(_cameras[0]);
-        if (cameraFrame != NULL)
-        {
-            if (cameraFrame->getPropertyMap().has("Camera"))
-            {
-                // Read the dimensions and field of view
-                double fovy;
-                int width,height;
-                std::string camParam = cameraFrame->getPropertyMap().get<std::string>("Camera");
-                std::istringstream iss (camParam, std::istringstream::in);
-                iss >> fovy >> width >> height;
-                // Create a frame grabber
-                _framegrabber = new rwlibs::simulation::GLFrameGrabber(width,height,fovy);
-                rw::graphics::SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
-                _framegrabber->init(gldrawer);
-            }
-        }
-
-        rw::kinematics::Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[0]);
-        if (cameraFrame25D != NULL)
-        {
-            if (cameraFrame25D->getPropertyMap().has("Scanner25D"))
-            {
-                // Read the dimensions and field of view
-                double fovy;
-                int width,height;
-                std::string camParam = cameraFrame25D->getPropertyMap().get<std::string>("Scanner25D");
-                std::istringstream iss (camParam, std::istringstream::in);
-                iss >> fovy >> width >> height;
-                // Create a frame grabber
-                _framegrabber25D = new rwlibs::simulation::GLFrameGrabber25D(width,height,fovy);
-                rw::graphics::SceneViewer::Ptr gldrawer = getRobWorkStudio()->getView()->getSceneViewer();
-                _framegrabber25D->init(gldrawer);
-            }
-        }
-        */
-
         UR_left = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Left");
         UR_right = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Right");
         TCP_left = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Left");
@@ -141,7 +81,6 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
     }
 }
 
-
 void DualRobotPlugin::close()
 {
     log().info() << "CLOSE" << "\n";
@@ -159,94 +98,9 @@ void DualRobotPlugin::close()
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("BackgroundImage",bgFrame);
     }
-
-    /*
-    // Delete the old framegrabber
-    if (_framegrabber != NULL)
-    {
-        delete _framegrabber;
-    }
-    _framegrabber = NULL;
-    */
-
+    
     rws_wc = NULL;
 }
-
-/*
-cv::Mat DualRobotPlugin::toOpenCVImage(const rw::sensor::Image& img)
-{
-    cv::Mat res(img.getHeight(),img.getWidth(), CV_8SC3);
-    res.data = (uchar*)img.getImageData();
-    return res;
-}
-*/
-/*
-void DualRobotPlugin::get25DImage()
-{
-    if (_framegrabber25D != NULL)
-    {
-        for (unsigned int i = 0; i < _cameras25D.size(); i++)
-        {
-            // Get the image as a RW image
-            rw::kinematics::Frame* cameraFrame25D = rws_wc->findFrame(_cameras25D[i]); // "Camera");
-            _framegrabber25D->grab(cameraFrame25D, rws_state);
-
-            //const Image& image = _framegrabber->getImage();
-
-            const rw::geometry::PointCloud* img = &(_framegrabber25D->getImage());
-
-            std::ofstream output(_cameras25D[i] + ".pcd");
-            output << "# .PCD v.5 - Point Cloud Data file format\n";
-            output << "FIELDS x y z\n";
-            output << "SIZE 4 4 4\n";
-            output << "TYPE F F F\n";
-            output << "WIDTH " << img->getWidth() << "\n";
-            output << "HEIGHT " << img->getHeight() << "\n";
-            output << "POINTS " << img->getData().size() << "\n";
-            output << "DATA ascii\n";
-            for(const auto &p_tmp : img->getData())
-            {
-                rw::math::Vector3D<float> p = p_tmp;
-                output << p(0) << " " << p(1) << " " << p(2) << "\n";
-            }
-            output.close();
-        }
-    }
-}
-*/
-/*
-void DualRobotPlugin::getImage()
-{
-    if (_framegrabber != NULL)
-    {
-        for (unsigned int i = 0; i < _cameras.size(); i++)
-        {
-            // Get the image as a RW image
-            rw::kinematics::Frame* cameraFrame = rws_wc->findFrame(_cameras[i]); // "Camera");
-            _framegrabber->grab(cameraFrame, rws_state);
-
-            const rw::sensor::Image* rw_image = &(_framegrabber->getImage());
-
-            // Convert to OpenCV matrix.
-            cv::Mat image = cv::Mat(rw_image->getHeight(), rw_image->getWidth(), CV_8UC3, (rw::sensor::Image*)rw_image->getImageData());
-
-            // Convert to OpenCV image
-            cv::Mat imflip, imflip_mat;
-            cv::flip(image, imflip, 1);
-            cv::cvtColor( imflip, imflip_mat, cv::COLOR_RGB2BGR);
-
-            cv::imwrite(_cameras[i] + ".png", imflip_mat );
-
-            // Show in QLabel
-            QImage img(imflip.data, imflip.cols, imflip.rows, imflip.step, QImage::Format_RGB888);
-            QPixmap p = QPixmap::fromImage(img);
-            //unsigned int maxW = 480;
-            //unsigned int maxH = 640;
-            //_label->setPixmap(p.scaled(maxW,maxH,Qt::KeepAspectRatio));
-        }
-    }
-}
-*/
 
 void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 {
