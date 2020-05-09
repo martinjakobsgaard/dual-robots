@@ -65,7 +65,7 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
         UR_right = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Right");
         TCP_left = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Left");
         TCP_right = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Right");
-        
+
         pick_object = rws_wc->findFrame<rw::kinematics::MovableFrame>("pick_object");
         pick_platform = rws_wc->findFrame<rw::kinematics::Frame>("pick_platform");
 
@@ -99,7 +99,7 @@ void DualRobotPlugin::close()
     {
         getRobWorkStudio()->getWorkCellScene()->removeDrawable("BackgroundImage",bgFrame);
     }
-    
+
     rws_wc = NULL;
 }
 
