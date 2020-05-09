@@ -11,7 +11,6 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
     connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
-    //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
 
@@ -247,7 +246,6 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 
 void DualRobotPlugin::home_button()
 {
-    std::cout << "Home button pressed!" << std::endl;
     UR_left->setQ(homeQ_left, rws_state);
     UR_right->setQ(homeQ_right, rws_state);
     getRobWorkStudio()->setState(rws_state);
@@ -255,7 +253,6 @@ void DualRobotPlugin::home_button()
 
 void DualRobotPlugin::path_button()
 {
-    std::cout << "Path button pressed!" << std::endl;
     set_status("finding object path...");
     if (rrt_thread.joinable())
         rrt_thread.join();
@@ -264,7 +261,6 @@ void DualRobotPlugin::path_button()
 
 void DualRobotPlugin::show_path_button()
 {
-    std::cout << "Show path button pressed!" << std::endl;
     set_status("showing path...");
     if (show_path_thread.joinable())
         show_path_thread.join();
@@ -273,7 +269,6 @@ void DualRobotPlugin::show_path_button()
 
 void DualRobotPlugin::optimize_path_button()
 {
-    std::cout << "Optimize path button pressed!" << std::endl;
     set_status("optimizing path...");
     if (optimize_path_thread.joinable())
         optimize_path_thread.join();
@@ -282,7 +277,6 @@ void DualRobotPlugin::optimize_path_button()
 
 void DualRobotPlugin::show_optimized_path_button()
 {
-    std::cout << "Show optimized path button pressed!" << std::endl;
     set_status("showing optimized path...");
     if (show_optimized_path_thread.joinable())
         show_optimized_path_thread.join();
@@ -458,20 +452,21 @@ void DualRobotPlugin::find_object_path()
 
     const auto Qdist = [](const rw::math::Q &a, const rw::math::Q &b)
     {
-        double l = 0;
         /*
+        double l = 0;
         for (unsigned int i = 0; i < 6; i++)
             l += std::pow(a[i]-b[i], 2);
+        return std::sqrt(l);
         */
 
-        l = std::pow((a[0]-b[0])*(1.0),2)+
+        return std::sqrt(
+            std::pow((a[0]-b[0])*(1.0),2)+
             std::pow((a[1]-b[1])*(0.8),2)+
             std::pow((a[2]-b[2])*(0.6),2)+
             std::pow((a[3]-b[3])*(0.4),2)+
             std::pow((a[4]-b[4])*(0.3),2)+
-            std::pow((a[5]-b[5])*(0.2),2);
+            std::pow((a[5]-b[5])*(0.2),2));
 
-        return std::sqrt(l);
     };
 
     rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
