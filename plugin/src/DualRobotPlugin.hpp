@@ -174,6 +174,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         // Algorithms (big boy stuff)
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);
         void find_object_path();
+        double Qdist(const rw::math::Q &a, const rw::math::Q &b) const;
 
         // Misc
         rwlibs::opengl::RenderImage *_textureRender, *_bgRender;

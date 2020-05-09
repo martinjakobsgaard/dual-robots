@@ -390,19 +390,43 @@ void DualRobotPlugin::optimize_object_path()
         return (1 - t) * a + t * b;
     };
 
+    rw::kinematics::State test_state = rws_state;
+
+    optimized_object_path.push_back(object_path.at(0));
+
     for (unsigned int i = 0; i < object_path.size()-1; i++)
     {
-        for (unsigned int j = 0; j < lerp_points; j++)
+        for (unsigned int j = 1; j < lerp_points+1; j++)
         {
+            rw::math::Q leftQ = lerp(object_path[i].Q_left, object_path[i+1].Q_left, j/(double)lerp_points);
+
+            // Find rightQ
+            std::vector<rw::math::Q> rightQs;
+
+            {
+                UR_left->setQ(leftQ, test_state);
+                rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), test_state);
+                rw::math::Transform3D<> targetT = frameBaseTObj * grabT_right;
+
+                rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, test_state) );
+
+                // Return solution configurations
+                rightQs = closedFormSolver->solve(targetT, test_state);
+            }
+
+            // Sort collisionfree right Qs based on Q-distance to last rightQ
+            std::sort(rightQs.begin(), rightQs.end(),
+                    [this](const rw::math::Q &l, const rw::math::Q &r){return Qdist(this->optimized_object_path[this->optimized_object_path.size()-1].Q_right, l) < Qdist(this->optimized_object_path[this->optimized_object_path.size()-1].Q_right, r);}
+                    );
+
             optimized_object_path.push_back(
                     {{0,0,0,0,0,0},
-                    lerp(object_path[i].Q_left, object_path[i+1].Q_left, j/(double)lerp_points),
-                    lerp(object_path[i].Q_right, object_path[i+1].Q_right, j/(double)lerp_points)
+                    leftQ,
+                    rightQs.at(0)
                     });
         }
     }
 
-    optimized_object_path.push_back(object_path[object_path.size()-1]);
 
     set_status("ok");
 }
@@ -449,25 +473,6 @@ void DualRobotPlugin::find_object_path()
 
     unsigned int iterations = 0;
     bool success = true;
-
-    const auto Qdist = [](const rw::math::Q &a, const rw::math::Q &b)
-    {
-        /*
-        double l = 0;
-        for (unsigned int i = 0; i < 6; i++)
-            l += std::pow(a[i]-b[i], 2);
-        return std::sqrt(l);
-        */
-
-        return std::sqrt(
-            std::pow((a[0]-b[0])*(1.0),2)+
-            std::pow((a[1]-b[1])*(0.8),2)+
-            std::pow((a[2]-b[2])*(0.6),2)+
-            std::pow((a[3]-b[3])*(0.4),2)+
-            std::pow((a[4]-b[4])*(0.3),2)+
-            std::pow((a[5]-b[5])*(0.2),2));
-
-    };
 
     rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
 
@@ -534,10 +539,10 @@ void DualRobotPlugin::find_object_path()
             rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), test_state);
             rw::math::Transform3D<> targetT = frameBaseTObj * grabT_right;
 
-            rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, rws_state) );
+            rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, test_state) );
 
             // Return solution configurations
-            rightQs = closedFormSolver->solve(targetT, rws_state);
+            rightQs = closedFormSolver->solve(targetT, test_state);
         }
 
         // Remove collision right UR Qs
@@ -562,7 +567,7 @@ void DualRobotPlugin::find_object_path()
 
         // Sort collisionfree right Qs based on Q-distance to last rightQ
         std::sort(colfree_rightQs.begin(), colfree_rightQs.end(),
-                [&closest_Q, &Qdist](const rw::math::Q &l, const rw::math::Q &r){return Qdist(closest_Q->getValue().Q_right, l) < Qdist(closest_Q->getValue().Q_right, r);}
+                [this, &closest_Q](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(closest_Q->getValue().Q_right, l) < this->Qdist(closest_Q->getValue().Q_right, r);}
                 );
 
         // Find robot configurations
@@ -594,6 +599,17 @@ void DualRobotPlugin::find_object_path()
     }
 
     std::cout << "Yikers Matt needs to do some work! O no" << std::endl;
+}
+
+double DualRobotPlugin::Qdist(const rw::math::Q &a, const rw::math::Q &b) const
+{
+    return std::sqrt(
+            std::pow((a[0]-b[0])*(1.0),2)+
+            std::pow((a[1]-b[1])*(0.8),2)+
+            std::pow((a[2]-b[2])*(0.6),2)+
+            std::pow((a[3]-b[3])*(0.4),2)+
+            std::pow((a[4]-b[4])*(0.3),2)+
+            std::pow((a[5]-b[5])*(0.2),2));
 }
 
 struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
