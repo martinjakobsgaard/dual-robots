@@ -49,6 +49,20 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QPushButton" name="ui_optimize_path_button">
+      <property name="text">
+       <string>Optimized path</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="ui_show_optimized_path_button">
+      <property name="text">
+       <string>Show optimized path</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
  </widget>

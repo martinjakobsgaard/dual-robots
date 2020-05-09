@@ -9,7 +9,8 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
     connect(ui_path_button, SIGNAL(pressed()), this, SLOT(path_button()));
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
-    //connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
+    connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
+    connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
 
     //_framegrabber = NULL;
 
@@ -254,7 +255,6 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 
 void DualRobotPlugin::home_button()
 {
-    std::cout << "Home button pressed!" << std::endl;
     UR_left->setQ(homeQ_left, rws_state);
     UR_right->setQ(homeQ_right, rws_state);
     getRobWorkStudio()->setState(rws_state);
@@ -262,8 +262,7 @@ void DualRobotPlugin::home_button()
 
 void DualRobotPlugin::path_button()
 {
-    std::cout << "Path button pressed!" << std::endl;
-    set_status("Finding object path...");
+    set_status("finding object path...");
     if (rrt_thread.joinable())
         rrt_thread.join();
     rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this);
@@ -271,11 +270,26 @@ void DualRobotPlugin::path_button()
 
 void DualRobotPlugin::show_path_button()
 {
-    std::cout << "Show path button pressed!" << std::endl;
-    set_status("Showing path...");
+    set_status("showing path...");
     if (show_path_thread.joinable())
         show_path_thread.join();
     show_path_thread = std::thread(&DualRobotPlugin::show_object_path, this);
+}
+
+void DualRobotPlugin::optimize_path_button()
+{
+    set_status("optimizing path...");
+    if (optimize_path_thread.joinable())
+        optimize_path_thread.join();
+    optimize_path_thread = std::thread(&DualRobotPlugin::optimize_object_path, this);
+}
+
+void DualRobotPlugin::show_optimized_path_button()
+{
+    set_status("showing optimized path...");
+    if (show_optimized_path_thread.joinable())
+        show_optimized_path_thread.join();
+    show_optimized_path_thread = std::thread(&DualRobotPlugin::show_optimized_object_path, this);
 }
 
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
@@ -373,7 +387,48 @@ void DualRobotPlugin::show_object_path()
         std::this_thread::sleep_for(std::chrono::milliseconds(700));
     }
 
-    set_status("Ok");
+    set_status("ok");
+}
+
+void DualRobotPlugin::optimize_object_path()
+{
+    const unsigned int lerp_points = 10;
+
+    const auto lerp = [](const rw::math::Q &a, const rw::math::Q &b, double t)
+    {
+        return (1 - t) * a + t * b;
+    };
+
+    for (unsigned int i = 0; i < object_path.size()-1; i++)
+    {
+        for (unsigned int j = 0; j < lerp_points; j++)
+        {
+            optimized_object_path.push_back(
+                    {{0,0,0,0,0,0},
+                    lerp(object_path[i].Q_left, object_path[i+1].Q_left, j/(double)lerp_points),
+                    lerp(object_path[i].Q_right, object_path[i+1].Q_right, j/(double)lerp_points)
+                    });
+        }
+    }
+
+    optimized_object_path.push_back(object_path[object_path.size()-1]);
+
+    set_status("ok");
+}
+
+void DualRobotPlugin::show_optimized_object_path()
+{
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
+
+    for (const ObjPathQ &step : optimized_object_path)
+    {
+        UR_left->setQ(step.Q_left, rws_state);
+        UR_right->setQ(step.Q_right, rws_state);
+        getRobWorkStudio()->setState(rws_state);
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    }
+
+    set_status("ok");
 }
 
 void DualRobotPlugin::find_object_path()
@@ -406,20 +461,21 @@ void DualRobotPlugin::find_object_path()
 
     const auto Qdist = [](const rw::math::Q &a, const rw::math::Q &b)
     {
-        double l = 0;
         /*
+        double l = 0;
         for (unsigned int i = 0; i < 6; i++)
             l += std::pow(a[i]-b[i], 2);
+        return std::sqrt(l);
         */
 
-        l = std::pow((a[0]-b[0])*(1.0),2)+
+        return std::sqrt(
+            std::pow((a[0]-b[0])*(1.0),2)+
             std::pow((a[1]-b[1])*(0.8),2)+
             std::pow((a[2]-b[2])*(0.6),2)+
             std::pow((a[3]-b[3])*(0.4),2)+
             std::pow((a[4]-b[4])*(0.3),2)+
-            std::pow((a[5]-b[5])*(0.2),2);
+            std::pow((a[5]-b[5])*(0.2),2));
 
-        return std::sqrt(l);
     };
 
     rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
