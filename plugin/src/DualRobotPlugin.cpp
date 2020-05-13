@@ -225,8 +225,8 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
     while (!rrt_finished)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        UR_left->setQ(object_path_tree->getLast().getValue().Q_left, *state);
-        UR_right->setQ(object_path_tree->getLast().getValue().Q_right, *state);
+        UR_left->setQ(object_pick_tree->getLast().getValue().Q_left, *state);
+        UR_right->setQ(object_pick_tree->getLast().getValue().Q_right, *state);
         getRobWorkStudio()->setState(*state);
     }
 
@@ -328,7 +328,8 @@ void DualRobotPlugin::find_object_path()
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state_clone);
 
     // Initialize tree with pick obj Q
-    object_path_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
+    object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
+    object_place_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_placeQ);
 
     state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
@@ -346,8 +347,9 @@ void DualRobotPlugin::find_object_path()
     rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
 
     bool rrt_connect = true;
+    bool tree_switch = false;
 
-    while (Qdist(object_path_tree->getLast().getValue().Q_left, placeQ_left) > rrt_eps)
+    while (true)
     {
         if (iterations++ == rrt_maxiterations)
         {
@@ -368,15 +370,29 @@ void DualRobotPlugin::find_object_path()
         rw::math::Q randQ(6, q0d(eng), q1d(eng), q2d(eng), q3d(eng), q4d(eng), q5d(eng));
         //std::cout << randQ << std::endl;
 
-        // Find closest point in tree
-        auto [closest_Q, closest_dist] = find_closest(object_path_tree.get(), randQ);
+        // Find closest points in trees
+        rwlibs::pathplanners::RRTNode<ObjPathQ> *main_closest_Q;
+        double main_closest_dist;
 
-        rw::math::Q nearQ = closest_Q->getValue().Q_left;
+        if (tree_switch)
+        {
+            auto close = find_closest(object_place_tree.get(), randQ);
+            main_closest_Q = close.first;
+            main_closest_dist = close.second;
+        }
+        else
+        {
+            auto close = find_closest(object_pick_tree.get(), randQ);
+            main_closest_Q = close.first;
+            main_closest_dist = close.second;
+        }
+
+        rw::math::Q nearQ = main_closest_Q->getValue().Q_left;
 
         // Find node to add
         rw::math::Q newQ = randQ;
 
-        if (Qdist(newQ, nearQ) > rrt_eps)
+        if (main_closest_dist > rrt_eps)
         {
             newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ))*rrt_eps;
         }
@@ -414,7 +430,7 @@ void DualRobotPlugin::find_object_path()
             rw::kinematics::State test_state = state_clone;
             UR_right->setQ(q, test_state);
             if (!collisionDetector->inCollision(test_state, NULL, true)
-                && Qdist(q, closest_Q->getValue().Q_right) < rrt_eps*3
+                && Qdist(q, main_closest_Q->getValue().Q_right) < rrt_eps*3
                )
             {
                 colfree_rightQs.push_back(q);
@@ -428,22 +444,73 @@ void DualRobotPlugin::find_object_path()
 
         // Sort collisionfree right Qs based on Q-distance to last rightQ
         std::sort(colfree_rightQs.begin(), colfree_rightQs.end(),
-                [this, &closest_Q](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(closest_Q->getValue().Q_right, l) < this->Qdist(closest_Q->getValue().Q_right, r);}
+                [this, &main_closest_Q](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(main_closest_Q->getValue().Q_right, l) < this->Qdist(main_closest_Q->getValue().Q_right, r);}
                 );
 
         // Find robot configurations
         ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, colfree_rightQs.at(0)};
 
         // Add node to tree
-        object_path_tree->add(new_node, closest_Q);
+        if (tree_switch)
+        {
+            object_place_tree->add(new_node, main_closest_Q);
+        }
+        else
+        {
+            object_pick_tree->add(new_node, main_closest_Q);
+        }
+
+        rwlibs::pathplanners::RRTNode<ObjPathQ> *other_closest_Q;
+        double other_closest_dist;
+
+        if (tree_switch)
+        {
+            auto close = find_closest(object_pick_tree.get(), randQ);
+            other_closest_Q = close.first;
+            other_closest_dist = close.second;
+        }
+        else
+        {
+            auto close = find_closest(object_place_tree.get(), randQ);
+            other_closest_Q = close.first;
+            other_closest_dist = close.second;
+        }
+
+        if (other_closest_dist < rrt_eps)
+        {
+            object_path.clear();
+            if (tree_switch)
+            {
+                object_pick_tree->getRootPath(*other_closest_Q, object_path);
+                std::reverse(object_path.begin(), object_path.end());
+                object_place_tree->getRootPath(object_place_tree->getLast(), object_path);
+            }
+            else
+            {
+                object_pick_tree->getRootPath(object_pick_tree->getLast(), object_path);
+                std::reverse(object_path.begin(), object_path.end());
+                object_place_tree->getRootPath(*other_closest_Q, object_path);
+            }
+            success = true;
+            break;
+        }
+
+        tree_switch = !tree_switch;
+
+        if (!rrt_connect)
+        {
+            tree_switch = false;
+        }
     }
 
     if (success)
     {
-        object_path_tree->add(obj_placeQ, &object_path_tree->getLast());
+        /*
+        object_pick_tree->add(obj_placeQ, &object_pick_tree->getLast());
         object_path.clear();
-        object_path_tree->getRootPath(object_path_tree->getLast(), object_path);
+        object_pick_tree->getRootPath(object_pick_tree->getLast(), object_path);
         std::reverse(object_path.begin(), object_path.end());
+        */
         set_status("Found path for object with " + std::to_string(iterations) + " iterations!");
         std::cout << "Found path of length " << object_path.size() << std::endl;
     }

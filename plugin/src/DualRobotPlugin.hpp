@@ -130,7 +130,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         std::thread rrt_thread;
 
-        std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_path_tree;
+        std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_pick_tree;
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_place_tree;
 
         const unsigned int rrt_maxiterations = 15000;
