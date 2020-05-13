@@ -369,27 +369,17 @@ void DualRobotPlugin::find_object_path()
         //std::cout << randQ << std::endl;
 
         // Find closest point in tree
-        rwlibs::pathplanners::RRTNode<ObjPathQ> *closest_Q = &(object_path_tree->getRoot());
-        double closest_dist = Qdist(closest_Q->getValue().Q_left, randQ);
-
-        auto it = object_path_tree->getNodes();
-        for (auto ptr = it.first; ptr < it.second; ptr++)
-        {
-            rwlibs::pathplanners::RRTNode<ObjPathQ> *pathQ = *ptr;
-
-            double dist = Qdist(pathQ->getValue().Q_left, randQ);
-
-            if (dist <= closest_dist)
-            {
-                closest_Q = pathQ;
-                closest_dist = dist;
-            }
-        }
+        auto [closest_Q, closest_dist] = find_closest(object_path_tree.get(), randQ);
 
         rw::math::Q nearQ = closest_Q->getValue().Q_left;
 
         // Find node to add
-        rw::math::Q newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ))*rrt_eps;
+        rw::math::Q newQ = randQ;
+
+        if (Qdist(newQ, nearQ) > rrt_eps)
+        {
+            newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ))*rrt_eps;
+        }
 
         // Check collision for left robot arm + object
         {
@@ -483,12 +473,12 @@ double DualRobotPlugin::Qdist(const rw::math::Q &a, const rw::math::Q &b) const
             std::pow((a[5]-b[5])*(0.2),2));
 }
 
-std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> &tree, rw::math::Q q) const
+std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> *tree, rw::math::Q q) const
 {
-    rwlibs::pathplanners::RRTNode<ObjPathQ> *closest_Q = &(object_path_tree->getRoot());
+    rwlibs::pathplanners::RRTNode<ObjPathQ> *closest_Q = &(tree->getRoot());
     double closest_dist = Qdist(closest_Q->getValue().Q_left, q);
 
-    auto it = object_path_tree->getNodes();
+    auto it = tree->getNodes();
     for (auto ptr = it.first; ptr < it.second; ptr++)
     {
         rwlibs::pathplanners::RRTNode<ObjPathQ> *pathQ = *ptr;
