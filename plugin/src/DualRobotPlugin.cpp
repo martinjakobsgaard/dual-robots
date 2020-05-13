@@ -345,6 +345,8 @@ void DualRobotPlugin::find_object_path()
 
     rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
 
+    bool rrt_connect = true;
+
     while (Qdist(object_path_tree->getLast().getValue().Q_left, placeQ_left) > rrt_eps)
     {
         if (iterations++ == rrt_maxiterations)
@@ -479,6 +481,28 @@ double DualRobotPlugin::Qdist(const rw::math::Q &a, const rw::math::Q &b) const
             std::pow((a[3]-b[3])*(0.4),2)+
             std::pow((a[4]-b[4])*(0.3),2)+
             std::pow((a[5]-b[5])*(0.2),2));
+}
+
+std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> &tree, rw::math::Q q) const
+{
+    rwlibs::pathplanners::RRTNode<ObjPathQ> *closest_Q = &(object_path_tree->getRoot());
+    double closest_dist = Qdist(closest_Q->getValue().Q_left, q);
+
+    auto it = object_path_tree->getNodes();
+    for (auto ptr = it.first; ptr < it.second; ptr++)
+    {
+        rwlibs::pathplanners::RRTNode<ObjPathQ> *pathQ = *ptr;
+
+        double dist = Qdist(pathQ->getValue().Q_left, q);
+
+        if (dist <= closest_dist)
+        {
+            closest_Q = pathQ;
+            closest_dist = dist;
+        }
+    }
+
+    return std::make_pair(closest_Q, closest_dist);
 }
 
 struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
