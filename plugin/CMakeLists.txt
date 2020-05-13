@@ -18,7 +18,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
 PROJECT(DualRobotPlugin)
 
 # Set C++ standard to C++14
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Used to resolve absolute path names
