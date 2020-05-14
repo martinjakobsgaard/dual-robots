@@ -311,17 +311,16 @@ void DualRobotPlugin::optimize_object_path()
     }
 
     // Shortcutting algorithm
-    std::uniform_int_distribution<unsigned int> dist(0, optimized_object_path.size()-1);
-
     unsigned int failed_iterations = 0;
     unsigned int success_iterations = 0;
     bool failed_this_iteration = false;
 
-    while (failed_iterations < 3)
+    while (failed_iterations < 100 && success_iterations < 100)
     {
         failed_this_iteration = false;
 
         // Choose two random points
+        std::uniform_int_distribution<unsigned int> dist(0, optimized_object_path.size()-1);
         unsigned int A = dist(eng);
         unsigned int B = dist(eng);
 
@@ -336,26 +335,40 @@ void DualRobotPlugin::optimize_object_path()
             B = t;
         }
 
-        ObjPathQ nodeA = optimized_object_path[dist(eng)];
-        ObjPathQ nodeB = optimized_object_path[dist(eng)];
+        ObjPathQ nodeA = optimized_object_path[A];
+        ObjPathQ nodeB = optimized_object_path[B];
+
+        // Make sure it shortcuts
+        {
+            double path_len = 0;
+            for (unsigned int i = A; i < B; i++)
+            {
+                path_len += Qdist(optimized_object_path[i].Q_left, optimized_object_path[i+1].Q_left);
+            }
+
+            if (path_len - Qdist(nodeA.Q_left, nodeB.Q_left) < 0.001)
+            {
+                continue;
+            }
+        }
 
         // Find points between node A and B
         std::vector<ObjPathQ> lerp_Qs;
         lerp_Qs.push_back(nodeA);
 
         {
-            unsigned int lerp_points = Qdist(nodeA.Q_left, nodeB.Q_right)/lerp_dist+1;
+            unsigned int lerp_points = Qdist(nodeA.Q_left, nodeB.Q_left)/lerp_dist+1;
 
-            for (unsigned int j = 1; (j < lerp_points+1) && (!failed_this_iteration); j++)
+            for (unsigned int i = 1; (i < lerp_points+1) && (!failed_this_iteration); i++)
             {
-                rw::math::Q leftQ = lerp(nodeA.Q_left, nodeB.Q_left, j/(double)lerp_points);
+                rw::math::Q leftQ = lerp(nodeA.Q_left, nodeB.Q_left, i/(double)lerp_points);
 
                 rw::math::Q rightQ = rightIK(test_state, leftQ, lerp_Qs[lerp_Qs.size()-1].Q_right);
 
                 rw::kinematics::State col_state = test_state;
                 UR_left->setQ(leftQ, col_state);
                 UR_right->setQ(rightQ, col_state);
-                if (!collisionDetector->inCollision(col_state, NULL, true))
+                if (collisionDetector->inCollision(col_state, NULL, true))
                 {
                     failed_this_iteration = true;
                     break;
@@ -376,16 +389,17 @@ void DualRobotPlugin::optimize_object_path()
         }
         else
         {
-            failed_iterations = 0;
             success_iterations++;
             std::cout << "Succesful iterations = " << success_iterations << std::endl;
+            std::cout << "Failed iterations = " << failed_iterations << std::endl;
+            failed_iterations = 0;
         }
 
         std::vector<ObjPathQ> new_path;
 
         for (unsigned int i = 0; i < optimized_object_path.size(); i++)
         {
-            if (i <= A && B >= i)
+            if ((i <= A) || (B <= i))
             {
                 new_path.push_back(optimized_object_path[i]);
             }
@@ -399,7 +413,7 @@ void DualRobotPlugin::optimize_object_path()
         optimized_object_path = new_path;
     }
 
-    set_status("ok");
+    set_status("succesful shortcuts = " + std::to_string(success_iterations));
 }
 
 void DualRobotPlugin::show_optimized_object_path()
@@ -412,7 +426,7 @@ void DualRobotPlugin::show_optimized_object_path()
         UR_left->setQ(step.Q_left, rws_state);
         UR_right->setQ(step.Q_right, rws_state);
         getRobWorkStudio()->setState(rws_state);
-        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     set_status("ok");
@@ -625,7 +639,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
         state_loop_thread.join();
     }
 
-    std::cout << "Yikers Matt needs to do some work! O no" << std::endl;
+    std::cout << "Eureka Matt, den er godfin" << std::endl;
 }
 
 double DualRobotPlugin::Qdist(const rw::math::Q &a, const rw::math::Q &b) const
