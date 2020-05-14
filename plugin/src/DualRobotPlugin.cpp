@@ -113,12 +113,7 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 
 void DualRobotPlugin::home_button()
 {
-    pick_object->attachTo(pick_platform.get(), rws_state);
-    pick_object->moveTo(pickT, rws_state);
-
-    UR_left->setQ(homeQ_left, rws_state);
-    UR_right->setQ(homeQ_right, rws_state);
-    getRobWorkStudio()->setState(rws_state);
+    getRobWorkStudio()->setState(getHomeState());
 }
 
 void DualRobotPlugin::movetoobject_button()
@@ -156,6 +151,32 @@ void DualRobotPlugin::show_optimized_path_button()
     if (show_optimized_path_thread.joinable())
         show_optimized_path_thread.join();
     show_optimized_path_thread = std::thread(&DualRobotPlugin::show_optimized_object_path, this);
+}
+
+rw::kinematics::State DualRobotPlugin::getHomeState()
+{
+    return rws_wc->getDefaultState();
+}
+
+rw::kinematics::State DualRobotPlugin::getPickState()
+{
+    rw::kinematics::State state = rws_wc->getDefaultState();
+    UR_left->setQ(pickQ_left, state);
+    UR_right->setQ(pickQ_right, state);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
+
+    return state;
+}
+
+rw::kinematics::State DualRobotPlugin::getPlaceState()
+{
+    rw::kinematics::State state = rws_wc->getDefaultState();
+    UR_left->setQ(pickQ_left, state);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
+    UR_left->setQ(placeQ_left, state);
+    UR_right->setQ(placeQ_right, state);
+
+    return state;
 }
 
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
@@ -223,8 +244,7 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 
 void DualRobotPlugin::show_object_path()
 {
-    UR_left->setQ(pickQ_left, rws_state);
-    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
+    rws_state = getPickState();
 
     for (const ObjPathQ &step : object_path)
     {
@@ -273,7 +293,7 @@ void DualRobotPlugin::optimize_object_path()
         return rightQs[0];
     };
 
-    rw::kinematics::State test_state = rws_state;
+    rw::kinematics::State test_state = getPickState();
 
     optimized_object_path.clear();
     optimized_object_path.push_back(object_path.at(0));
@@ -376,8 +396,7 @@ void DualRobotPlugin::optimize_object_path()
         else
         {
             success_iterations++;
-            std::cout << "Succesful iterations = " << success_iterations << std::endl;
-            std::cout << "Failed iterations = " << failed_iterations << std::endl;
+            set_status("shortcuts so far = " + std::to_string(success_iterations));
             failed_iterations = 0;
         }
 
@@ -424,17 +443,13 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     home_button();
 
     // Clone state to work with
-    rw::kinematics::State state_clone = rws_state;
-
-    // Grab object with left robot
-    UR_left->setQ(obj_pickQ.Q_left, state_clone);
-    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state_clone);
+    rw::kinematics::State state_clone = getPickState();
 
     // Initialize tree with pick obj Q
     object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
     object_place_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_placeQ);
 
-    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    //state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
@@ -455,7 +470,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     {
         if (iterations++ == rrt_maxiterations)
         {
-            set_status("Didn't find object path before max iterations!");
+            set_status("didn't find object path before max iterations!");
             success = false;
             rrt_finished = true;
             break;
@@ -604,12 +619,6 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 
     if (success)
     {
-        /*
-        object_pick_tree->add(obj_placeQ, &object_pick_tree->getLast());
-        object_path.clear();
-        object_pick_tree->getRootPath(object_pick_tree->getLast(), object_path);
-        std::reverse(object_path.begin(), object_path.end());
-        */
         set_status("found path for object with " + std::to_string(iterations) + " iterations!");
         std::cout << "Found path of length " << object_path.size() << std::endl;
     }
@@ -628,16 +637,30 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     std::cout << "Eureka Matt, den er godfin" << std::endl;
 }
 
-double DualRobotPlugin::Qdist(const rw::math::Q &a, const rw::math::Q &b) const
+double DualRobotPlugin::Qdist(const rw::math::Q &a, const rw::math::Q &b, bool use_weights) const
 {
-    double w[6] = {1.667, 1.0464, 0.6696, 0.3218, 0.2394, 0.1667};
-    return std::sqrt(
-            std::pow((a[0]-b[0])*(w[0]),2)+
-            std::pow((a[1]-b[1])*(w[1]),2)+
-            std::pow((a[2]-b[2])*(w[2]),2)+
-            std::pow((a[3]-b[3])*(w[3]),2)+
-            std::pow((a[4]-b[4])*(w[4]),2)+
-            std::pow((a[5]-b[5])*(w[5]),2));
+    constexpr std::array<double, 6> w = {1.667, 1.0464, 0.6696, 0.3218, 0.2394, 0.1667};
+
+    if (use_weights)
+    {
+        return std::sqrt(
+                std::pow((a[0]-b[0])*(w[0]),2)+
+                std::pow((a[1]-b[1])*(w[1]),2)+
+                std::pow((a[2]-b[2])*(w[2]),2)+
+                std::pow((a[3]-b[3])*(w[3]),2)+
+                std::pow((a[4]-b[4])*(w[4]),2)+
+                std::pow((a[5]-b[5])*(w[5]),2));
+    }
+    else
+    {
+        return std::sqrt(
+                std::pow(a[0]-b[0],2)+
+                std::pow(a[1]-b[1],2)+
+                std::pow(a[2]-b[2],2)+
+                std::pow(a[3]-b[3],2)+
+                std::pow(a[4]-b[4],2)+
+                std::pow(a[5]-b[5],2));
+    }
 }
 
 std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> *tree, rw::math::Q q) const
