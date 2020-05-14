@@ -644,13 +644,14 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 
 double DualRobotPlugin::Qdist(const rw::math::Q &a, const rw::math::Q &b) const
 {
+    double w[6] = {1.667, 1.0464, 0.6696, 0.3218, 0.2394, 0.1667};
     return std::sqrt(
-            std::pow((a[0]-b[0])*(1.0),2)+
-            std::pow((a[1]-b[1])*(0.8),2)+
-            std::pow((a[2]-b[2])*(0.6),2)+
-            std::pow((a[3]-b[3])*(0.4),2)+
-            std::pow((a[4]-b[4])*(0.3),2)+
-            std::pow((a[5]-b[5])*(0.2),2));
+            std::pow((a[0]-b[0])*(w[0]),2)+
+            std::pow((a[1]-b[1])*(w[1]),2)+
+            std::pow((a[2]-b[2])*(w[2]),2)+
+            std::pow((a[3]-b[3])*(w[3]),2)+
+            std::pow((a[4]-b[4])*(w[4]),2)+
+            std::pow((a[5]-b[5])*(w[5]),2));
 }
 
 std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> *tree, rw::math::Q q) const
