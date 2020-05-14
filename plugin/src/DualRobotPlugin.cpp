@@ -478,7 +478,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     {
         if (iterations++ == rrt_maxiterations)
         {
-            set_status("Didn't find object path before max iterations!");
+            set_status("didn't find object path before max iterations!");
             success = false;
             rrt_finished = true;
             break;
