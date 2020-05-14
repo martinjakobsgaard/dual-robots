@@ -118,7 +118,10 @@ void DualRobotPlugin::home_button()
 
 void DualRobotPlugin::movetoobject_button()
 {
-    std::cout << "Yikers Maly needs to do some work." << std::endl;
+    set_status("moving to object...");
+    if (movetoobject_thread.joinable())
+        movetoobject_thread.join();
+    movetoobject_thread = std::thread(&DualRobotPlugin::movetoobject, this);
 }
 
 void DualRobotPlugin::path_button()
@@ -240,6 +243,23 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
     }
 
     rrt_finished = false;
+}
+
+void DualRobotPlugin::movetoobject()
+{
+    std::vector<rw::math::Q> path;
+    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.1, path);
+    rw::kinematics::State state = getHomeState();
+
+    for (const auto &q : path)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        UR_left->setQ(q, state);
+        getRobWorkStudio()->setState(state);
+    }
+    set_status("ok");
+
+    std::cout << "Yikers Maly needs to do some work." << std::endl;
 }
 
 void DualRobotPlugin::show_object_path()

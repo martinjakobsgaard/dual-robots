@@ -160,6 +160,8 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         // Misc methods
         std::thread state_loop_thread;
         void update_state_loop(rw::kinematics::State *state);
+        std::thread movetoobject_thread;
+        void movetoobject();
         std::thread show_path_thread;
         void show_object_path();
         std::thread optimize_path_thread;
