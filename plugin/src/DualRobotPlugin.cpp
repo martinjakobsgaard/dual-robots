@@ -112,12 +112,7 @@ void DualRobotPlugin::stateChangedListener(const rw::kinematics::State& state)
 
 void DualRobotPlugin::home_button()
 {
-    pick_object->attachTo(pick_platform.get(), rws_state);
-    pick_object->moveTo(pickT, rws_state);
-
-    UR_left->setQ(homeQ_left, rws_state);
-    UR_right->setQ(homeQ_right, rws_state);
-    getRobWorkStudio()->setState(rws_state);
+    getRobWorkStudio()->setState(getHomeState());
 }
 
 void DualRobotPlugin::path_button()
