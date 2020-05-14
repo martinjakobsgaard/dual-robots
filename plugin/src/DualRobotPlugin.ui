@@ -109,7 +109,7 @@
     <item>
      <widget class="QPushButton" name="ui_optimize_path_button">
       <property name="text">
-       <string>Optimized path</string>
+       <string>Optimize path</string>
       </property>
      </widget>
     </item>
