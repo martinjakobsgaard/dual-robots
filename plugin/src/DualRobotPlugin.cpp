@@ -463,13 +463,13 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 
         if (tree_switch)
         {
-            auto close = find_closest(object_pick_tree.get(), randQ);
+            auto close = find_closest(object_pick_tree.get(), newQ);
             other_closest_Q = close.first;
             other_closest_dist = close.second;
         }
         else
         {
-            auto close = find_closest(object_place_tree.get(), randQ);
+            auto close = find_closest(object_place_tree.get(), newQ);
             other_closest_Q = close.first;
             other_closest_dist = close.second;
         }
