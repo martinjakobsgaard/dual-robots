@@ -627,12 +627,6 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 
     if (success)
     {
-        /*
-        object_pick_tree->add(obj_placeQ, &object_pick_tree->getLast());
-        object_path.clear();
-        object_pick_tree->getRootPath(object_pick_tree->getLast(), object_path);
-        std::reverse(object_path.begin(), object_path.end());
-        */
         set_status("found path for object with " + std::to_string(iterations) + " iterations!");
         std::cout << "Found path of length " << object_path.size() << std::endl;
     }
