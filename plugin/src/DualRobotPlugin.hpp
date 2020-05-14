@@ -76,13 +76,14 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void stateChangedListener(const rw::kinematics::State& state);
 
         void home_button();
+        void movetoobject_button();
         void path_button();
         void show_path_button();
         void optimize_path_button();
         void show_optimized_path_button();
 
         bool checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q);
-        void createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime);
+        void createPathRRTConnect(rw::models::SerialDevice::Ptr robot, rw::math::Q from, rw::math::Q to, double epsilon, std::vector<rw::math::Q> &path);
 
     private:
         rw::models::WorkCell::Ptr rws_wc;

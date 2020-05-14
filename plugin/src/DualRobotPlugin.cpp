@@ -7,6 +7,7 @@ DualRobotPlugin::DualRobotPlugin():
 
     // Connect UI components to member functions
     connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
+    connect(ui_button_movetoobject, SIGNAL(pressed()), this, SLOT(movetoobject_button()));
     connect(ui_path_button, SIGNAL(pressed()), this, SLOT(path_button()));
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
@@ -120,6 +121,11 @@ void DualRobotPlugin::home_button()
     getRobWorkStudio()->setState(rws_state);
 }
 
+void DualRobotPlugin::movetoobject_button()
+{
+    std::cout << "Yikers Maly needs to do some work." << std::endl;
+}
+
 void DualRobotPlugin::path_button()
 {
     set_status("finding object path...");
@@ -175,46 +181,26 @@ bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::
     return true;
 }
 
-void DualRobotPlugin::createPathRRTConnect(rw::math::Q from, rw::math::Q to, double extend, double maxTime)
+void DualRobotPlugin::createPathRRTConnect(rw::models::SerialDevice::Ptr robot, rw::math::Q from, rw::math::Q to, double epsilon, std::vector<rw::math::Q> &path)
 {
-    /*
-    _device->setQ(from,_state);
-    getRobWorkStudio()->setState(_state);
-    CollisionDetector detector(_wc, ProximityStrategyFactory::makeDefaultCollisionStrategy());
-    PlannerConstraint constraint = PlannerConstraint::make(&detector,_device,_state);
-    QSampler::Ptr sampler = QSampler::makeConstrained(QSampler::makeUniform(_device),constraint.getQConstraintPtr());
-    QMetric::Ptr metric = MetricFactory::makeEuclidean<Q>();
-    QToQPlanner::Ptr planner = RRTPlanner::makeQToQPlanner(constraint, sampler, metric, extend, RRTPlanner::RRTConnect);
+    robot->setQ(from,rws_state);
+    getRobWorkStudio()->setState(rws_state);
 
-    _path.clear();
-    if (!checkCollisions(_device, _state, detector, from))
-        cout << from << " is in colission!" << endl;
-    if (!checkCollisions(_device, _state, detector, to))
-        cout << to << " is in colission!" << endl;
-    Timer t;
-    t.resetAndResume();
-    planner->query(from,to,_path,maxTime);
-    t.pause();
+    rw::pathplanning::PlannerConstraint constraint = rw::pathplanning::PlannerConstraint::make(collisionDetector.get(),robot,rws_state);
+    rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeConstrained(rw::pathplanning::QSampler::makeUniform(robot),constraint.getQConstraintPtr());
+    rw::math::QMetric::Ptr metric = rw::math::MetricFactory::makeEuclidean<rw::math::Q>();
+    rw::pathplanning::QToQPlanner::Ptr planner = rwlibs::pathplanners::RRTPlanner::makeQToQPlanner(constraint, sampler, metric, epsilon, rwlibs::pathplanners::RRTPlanner::RRTConnect);
 
-    if (t.getTime() >= maxTime)
+    rw::trajectory::QPath qpath;
+    std::cout << "Generating path with NO max. time. Be patient or cancel manually... ";
+    planner->query(from, to, qpath);
+    std::cout << "You done it!" << std::endl;
+    
+    path.clear();
+    for(const auto &q : qpath)
     {
-        cout << "Notice: max time of " << maxTime << " seconds reached." << endl;
+        path.push_back(q);
     }
-
-    const int duration = 10;
-
-    if(_path.size() == 2)
-    {   // The interpolated path between Q start and Q goal is collision free. Set the duration with respect to the desired velocity
-        LinearInterpolator<Q> linInt(from, to, duration);
-        QPath tempQ;
-        for(int i = 0; i < duration+1; i++)
-        {
-            tempQ.push_back(linInt.x(i));
-        }
-
-        _path=tempQ;
-    }
-    */
 }
 
 void DualRobotPlugin::set_status(std::string status_text)
