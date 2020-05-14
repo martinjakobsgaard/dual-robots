@@ -152,6 +152,21 @@ void DualRobotPlugin::show_optimized_path_button()
     show_optimized_path_thread = std::thread(&DualRobotPlugin::show_optimized_object_path, this);
 }
 
+rw::kinematics::State DualRobotPlugin::getHomeState()
+{
+    return rws_wc->getDefaultState();
+}
+
+rw::kinematics::State DualRobotPlugin::getGrabState()
+{
+    rw::kinematics::State state = rws_wc->getDefaultState();
+    UR_left->setQ(pickQ_left, state);
+    UR_right->setQ(pickQ_right, state);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
+
+    return state;
+}
+
 bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::kinematics::State &state, const rw::proximity::CollisionDetector &detector, const rw::math::Q &q)
 {
     rw::kinematics::State testState;
@@ -287,7 +302,7 @@ void DualRobotPlugin::optimize_object_path()
         return rightQs[0];
     };
 
-    rw::kinematics::State test_state = rws_state;
+    rw::kinematics::State test_state = getGrabState();
 
     optimized_object_path.clear();
     optimized_object_path.push_back(object_path.at(0));
@@ -390,8 +405,7 @@ void DualRobotPlugin::optimize_object_path()
         else
         {
             success_iterations++;
-            std::cout << "Succesful iterations = " << success_iterations << std::endl;
-            std::cout << "Failed iterations = " << failed_iterations << std::endl;
+            set_status("shortcuts so far = " + std::to_string(success_iterations));
             failed_iterations = 0;
         }
 
@@ -448,7 +462,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
     object_place_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_placeQ);
 
-    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    //state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
