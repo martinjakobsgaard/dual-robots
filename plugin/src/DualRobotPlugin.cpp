@@ -252,8 +252,7 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 
 void DualRobotPlugin::show_object_path()
 {
-    UR_left->setQ(pickQ_left, rws_state);
-    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
+    rws_state = getGrabState();
 
     for (const ObjPathQ &step : object_path)
     {
@@ -452,11 +451,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     home_button();
 
     // Clone state to work with
-    rw::kinematics::State state_clone = rws_state;
-
-    // Grab object with left robot
-    UR_left->setQ(obj_pickQ.Q_left, state_clone);
-    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state_clone);
+    rw::kinematics::State state_clone = getGrabState();
 
     // Initialize tree with pick obj Q
     object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
