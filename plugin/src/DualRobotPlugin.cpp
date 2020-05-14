@@ -253,7 +253,7 @@ void DualRobotPlugin::show_object_path()
 
 void DualRobotPlugin::optimize_object_path()
 {
-    const unsigned int lerp_points = 10;
+    const double lerp_dist = 0.02;
 
     const auto lerp = [](const rw::math::Q &a, const rw::math::Q &b, double t)
     {
@@ -289,10 +289,13 @@ void DualRobotPlugin::optimize_object_path()
 
     rw::kinematics::State test_state = rws_state;
 
+    optimized_object_path.clear();
     optimized_object_path.push_back(object_path.at(0));
 
     for (unsigned int i = 0; i < object_path.size()-1; i++)
     {
+        unsigned int lerp_points = Qdist(object_path[i].Q_left, object_path[i+1].Q_left)/lerp_dist+1;
+
         for (unsigned int j = 1; j < lerp_points+1; j++)
         {
             rw::math::Q leftQ = lerp(object_path[i].Q_left, object_path[i+1].Q_left, j/(double)lerp_points);
@@ -307,6 +310,94 @@ void DualRobotPlugin::optimize_object_path()
         }
     }
 
+    // Shortcutting algorithm
+    std::uniform_int_distribution<unsigned int> dist(0, optimized_object_path.size()-1);
+
+    unsigned int failed_iterations = 0;
+    unsigned int success_iterations = 0;
+    bool failed_this_iteration = false;
+
+    while (failed_iterations < 3)
+    {
+        failed_this_iteration = false;
+
+        // Choose two random points
+        unsigned int A = dist(eng);
+        unsigned int B = dist(eng);
+
+        if (A == B)
+        {
+            continue;
+        }
+        else if (A > B)
+        {
+            unsigned int t = A;
+            A = B;
+            B = t;
+        }
+
+        ObjPathQ nodeA = optimized_object_path[dist(eng)];
+        ObjPathQ nodeB = optimized_object_path[dist(eng)];
+
+        // Find points between node A and B
+        std::vector<ObjPathQ> lerp_Qs;
+        lerp_Qs.push_back(nodeA);
+
+        {
+            unsigned int lerp_points = Qdist(nodeA.Q_left, nodeB.Q_right)/lerp_dist+1;
+
+            for (unsigned int j = 1; (j < lerp_points+1) && (!failed_this_iteration); j++)
+            {
+                rw::math::Q leftQ = lerp(nodeA.Q_left, nodeB.Q_left, j/(double)lerp_points);
+
+                rw::math::Q rightQ = rightIK(test_state, leftQ, lerp_Qs[lerp_Qs.size()-1].Q_right);
+
+                rw::kinematics::State col_state = test_state;
+                UR_left->setQ(leftQ, col_state);
+                UR_right->setQ(rightQ, col_state);
+                if (!collisionDetector->inCollision(col_state, NULL, true))
+                {
+                    failed_this_iteration = true;
+                    break;
+                }
+
+                lerp_Qs.push_back(
+                        {{0,0,0,0,0,0},
+                        leftQ,
+                        rightQ
+                        });
+            }
+        }
+
+        if (failed_this_iteration)
+        {
+            failed_iterations++;
+            continue;
+        }
+        else
+        {
+            failed_iterations = 0;
+            success_iterations++;
+            std::cout << "Succesful iterations = " << success_iterations << std::endl;
+        }
+
+        std::vector<ObjPathQ> new_path;
+
+        for (unsigned int i = 0; i < optimized_object_path.size(); i++)
+        {
+            if (i <= A && B >= i)
+            {
+                new_path.push_back(optimized_object_path[i]);
+            }
+            else
+            {
+                new_path.insert(std::end(new_path), std::begin(lerp_Qs), std::end(lerp_Qs));
+                i = B;
+            }
+        }
+
+        optimized_object_path = new_path;
+    }
 
     set_status("ok");
 }
