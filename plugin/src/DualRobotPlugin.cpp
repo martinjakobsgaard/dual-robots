@@ -260,6 +260,33 @@ void DualRobotPlugin::optimize_object_path()
         return (1 - t) * a + t * b;
     };
 
+    const auto rightIK = [this](rw::kinematics::State state, const rw::math::Q leftQ, const rw::math::Q closeQ)
+    {
+        std::vector<rw::math::Q> rightQs;
+
+        UR_left->setQ(leftQ, state);
+        rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(this->rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), this->rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), state);
+        rw::math::Transform3D<> targetT = frameBaseTObj * this->grabT_right;
+
+        rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(this->UR_right, state));
+
+        // Return solution configurations
+        rightQs = closedFormSolver->solve(targetT, state);
+
+        if (rightQs.size() == 0)
+        {
+            std::cerr << "Error with IK" << std::endl;
+            return closeQ;
+        }
+
+        // Sort collisionfree right Qs based on Q-distance to last rightQ
+        std::sort(rightQs.begin(), rightQs.end(),
+                [this, &closeQ](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(closeQ, l) < this->Qdist(closeQ, r);}
+                );
+
+        return rightQs[0];
+    };
+
     rw::kinematics::State test_state = rws_state;
 
     optimized_object_path.push_back(object_path.at(0));
@@ -270,29 +297,12 @@ void DualRobotPlugin::optimize_object_path()
         {
             rw::math::Q leftQ = lerp(object_path[i].Q_left, object_path[i+1].Q_left, j/(double)lerp_points);
 
-            // Find rightQ
-            std::vector<rw::math::Q> rightQs;
-
-            {
-                UR_left->setQ(leftQ, test_state);
-                rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), test_state);
-                rw::math::Transform3D<> targetT = frameBaseTObj * grabT_right;
-
-                rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, test_state) );
-
-                // Return solution configurations
-                rightQs = closedFormSolver->solve(targetT, test_state);
-            }
-
-            // Sort collisionfree right Qs based on Q-distance to last rightQ
-            std::sort(rightQs.begin(), rightQs.end(),
-                    [this](const rw::math::Q &l, const rw::math::Q &r){return Qdist(this->optimized_object_path[this->optimized_object_path.size()-1].Q_right, l) < Qdist(this->optimized_object_path[this->optimized_object_path.size()-1].Q_right, r);}
-                    );
+            rw::math::Q rightQ = rightIK(test_state, leftQ, optimized_object_path[optimized_object_path.size()-1].Q_right);
 
             optimized_object_path.push_back(
                     {{0,0,0,0,0,0},
                     leftQ,
-                    rightQs.at(0)
+                    rightQ
                     });
         }
     }
