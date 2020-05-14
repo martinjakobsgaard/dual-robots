@@ -1,3 +1,4 @@
+*.m~
 plugin/CMakeCache.txt
 plugin/CMakeFiles/*
 plugin/cmake_install.cmake
