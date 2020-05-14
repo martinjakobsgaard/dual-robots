@@ -2,19 +2,16 @@ clear; clc
 
 % Distance vector
 l = [135.7, 425, 392.43, 93, 82, 0];
+range= 9
+last = 1
 
 
 %% Percentage of rest
 
 for i = 1:length(l)
-   w(i) = sum(l(i:end))/sum(l);
+   w(i) = (sum(l(i:end))/sum(l))*range + last
 end
-
-wsum = sum(w);
-for i = 1:length(l)
-  w(i) = w(i)+1/6;
-end
-
+w
 
 %% Diameter
 
