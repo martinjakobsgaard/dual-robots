@@ -167,7 +167,8 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void show_optimized_object_path();
 
         rw::kinematics::State getHomeState();
-        rw::kinematics::State getGrabState();
+        rw::kinematics::State getPickState();
+        rw::kinematics::State getPlaceState();
 
         // Algorithms (big boy stuff)
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);

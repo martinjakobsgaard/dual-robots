@@ -152,12 +152,23 @@ rw::kinematics::State DualRobotPlugin::getHomeState()
     return rws_wc->getDefaultState();
 }
 
-rw::kinematics::State DualRobotPlugin::getGrabState()
+rw::kinematics::State DualRobotPlugin::getPickState()
 {
     rw::kinematics::State state = rws_wc->getDefaultState();
     UR_left->setQ(pickQ_left, state);
     UR_right->setQ(pickQ_right, state);
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
+
+    return state;
+}
+
+rw::kinematics::State DualRobotPlugin::getPlaceState()
+{
+    rw::kinematics::State state = rws_wc->getDefaultState();
+    UR_left->setQ(pickQ_left, state);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
+    UR_left->setQ(placeQ_left, state);
+    UR_right->setQ(placeQ_right, state);
 
     return state;
 }
@@ -247,7 +258,7 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 
 void DualRobotPlugin::show_object_path()
 {
-    rws_state = getGrabState();
+    rws_state = getPickState();
 
     for (const ObjPathQ &step : object_path)
     {
@@ -296,7 +307,7 @@ void DualRobotPlugin::optimize_object_path()
         return rightQs[0];
     };
 
-    rw::kinematics::State test_state = getGrabState();
+    rw::kinematics::State test_state = getPickState();
 
     optimized_object_path.clear();
     optimized_object_path.push_back(object_path.at(0));
@@ -446,7 +457,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     home_button();
 
     // Clone state to work with
-    rw::kinematics::State state_clone = getGrabState();
+    rw::kinematics::State state_clone = getPickState();
 
     // Initialize tree with pick obj Q
     object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
