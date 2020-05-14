@@ -134,7 +134,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_place_tree;
 
         const unsigned int rrt_maxiterations = 15000;
-        const double rrt_eps = 0.3;
 
         std::vector<ObjPathQ> object_path;
         std::vector<ObjPathQ> optimized_object_path;
@@ -169,7 +168,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         // Algorithms (big boy stuff)
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);
-        void find_object_path();
+        void find_object_path(bool rrt_connect, double rrt_epsilon);
         double Qdist(const rw::math::Q &a, const rw::math::Q &b) const;
         std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> *tree, rw::math::Q q) const;
 

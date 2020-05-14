@@ -12,6 +12,8 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
     connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
 
+    ui_spinbox_epsilon->setPrefix("\u03B5 = ");
+
     // Create random engine
     eng = std::mt19937(rd());
 }
@@ -123,7 +125,7 @@ void DualRobotPlugin::path_button()
     set_status("finding object path...");
     if (rrt_thread.joinable())
         rrt_thread.join();
-    rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this);
+    rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this, ui_radiobutton_rrtconnect->isChecked(), ui_spinbox_epsilon->value());
 }
 
 void DualRobotPlugin::show_path_button()
@@ -315,7 +317,7 @@ void DualRobotPlugin::show_optimized_object_path()
     set_status("ok");
 }
 
-void DualRobotPlugin::find_object_path()
+void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 {
     // Set state to home
     home_button();
@@ -346,7 +348,6 @@ void DualRobotPlugin::find_object_path()
 
     rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
 
-    bool rrt_connect = true;
     bool tree_switch = false;
 
     while (true)
@@ -365,10 +366,7 @@ void DualRobotPlugin::find_object_path()
         }
 
         // Sample new 6D task-space object pos
-        //struct ObjQ sampleQ = {x_dist(eng), y_dist(eng), z_dist(eng), R_dist(eng), P_dist(eng), Y_dist(eng)};
-        //rw::math::Q randQ = constrainedSampler->sample();
         rw::math::Q randQ(6, q0d(eng), q1d(eng), q2d(eng), q3d(eng), q4d(eng), q5d(eng));
-        //std::cout << randQ << std::endl;
 
         // Find closest points in trees
         rwlibs::pathplanners::RRTNode<ObjPathQ> *main_closest_Q;
@@ -511,12 +509,12 @@ void DualRobotPlugin::find_object_path()
         object_pick_tree->getRootPath(object_pick_tree->getLast(), object_path);
         std::reverse(object_path.begin(), object_path.end());
         */
-        set_status("Found path for object with " + std::to_string(iterations) + " iterations!");
+        set_status("found path for object with " + std::to_string(iterations) + " iterations!");
         std::cout << "Found path of length " << object_path.size() << std::endl;
     }
     else
     {
-        set_status("Didn't find path for object before " + std::to_string(rrt_maxiterations) + " iterations!");
+        set_status("didn't find path for object before " + std::to_string(rrt_maxiterations) + " iterations!");
     }
 
     rrt_finished = true;
