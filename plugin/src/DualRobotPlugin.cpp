@@ -216,7 +216,7 @@ void DualRobotPlugin::createPathRRTConnect(rw::models::SerialDevice::Ptr robot, 
     rw::pathplanning::QToQPlanner::Ptr planner = rwlibs::pathplanners::RRTPlanner::makeQToQPlanner(constraint, sampler, metric, epsilon, rwlibs::pathplanners::RRTPlanner::RRTConnect);
 
     rw::trajectory::QPath qpath;
-    std::cout << "Generating path with NO max. time. Be patient or cancel manually... ";
+    std::cout << "Generating path with NO max. time. Be patient or cancel manually... " << std::flush;
     planner->query(from, to, qpath);
     std::cout << "You done it!" << std::endl;
     
