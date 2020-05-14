@@ -172,7 +172,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         // Algorithms (big boy stuff)
         void attach_object(rw::kinematics::State &state, rw::kinematics::Frame::Ptr grabber, rw::kinematics::MovableFrame::Ptr object);
         void find_object_path(bool rrt_connect, double rrt_epsilon);
-        double Qdist(const rw::math::Q &a, const rw::math::Q &b) const;
+        double Qdist(const rw::math::Q &a, const rw::math::Q &b, bool use_weights = true) const;
         std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> *tree, rw::math::Q q) const;
 
         // Random engine
