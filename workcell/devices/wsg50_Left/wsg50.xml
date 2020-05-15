@@ -101,6 +101,7 @@
   <!-- collision setup -->
   <CollisionSetup file ="GripperCollisionSetup.xml"/>
 
-  <Q name="Home">0.025</Q>	
+  <!--Q name="Home">0.025</Q-->
+  <Q name="Home">0.05</Q>	
 
 </TreeDevice>
