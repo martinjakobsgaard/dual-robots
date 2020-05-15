@@ -43,6 +43,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QPushButton" name="ui_button_movetohome">
+      <property name="text">
+       <string>Move to home</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QGroupBox" name="ui_groupbox_rrttype">
       <property name="title">
        <string>RRT type</string>
