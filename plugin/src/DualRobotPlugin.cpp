@@ -258,7 +258,7 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 void DualRobotPlugin::movetoobject()
 {
     rw::kinematics::State state = getHomeState();
-    
+
     // Move arm 1
     std::vector<rw::math::Q> pathLeft;
     createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.1, pathLeft);
@@ -266,19 +266,22 @@ void DualRobotPlugin::movetoobject()
     std::vector<rw::math::Q> pathRight;
     createPathRRTConnect(UR_right, homeQ_right, pickQ_right, 0.1, pathRight);
 
-    for (const auto &q : pathLeft)
+    optimize_path(pathLeft, UR_left, state);
+    optimize_path(pathRight, UR_right, state);
+
+    unsigned int max_len = std::max(pathLeft.size(), pathRight.size());
+    for (unsigned int i = 0; i < max_len; i++)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
-        UR_left->setQ(q, state);
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        if (i < pathLeft.size())
+            UR_left->setQ(pathLeft[i], state);
+
+        if (i < pathRight.size())
+            UR_right->setQ(pathRight[i], state);
+
         getRobWorkStudio()->setState(state);
     }
 
-    for (const auto &q : pathRight)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
-        UR_right->setQ(q, state);
-        getRobWorkStudio()->setState(state);
-    }
     set_status("ok");
 
     std::cout << "Yikers Maly needs to do some work." << std::endl;
