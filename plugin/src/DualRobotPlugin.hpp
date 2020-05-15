@@ -77,6 +77,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         void home_button();
         void movetoobject_button();
+        void movetohome_button();
         void path_button();
         void show_path_button();
         void optimize_path_button();
@@ -95,6 +96,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rw::kinematics::Frame::Ptr TCP_right;
         rw::kinematics::MovableFrame::Ptr pick_object;
         rw::kinematics::Frame::Ptr pick_platform;
+        rw::kinematics::Frame::Ptr rws_world;
 
         rw::proximity::CollisionDetector::Ptr collisionDetector;
 
@@ -143,25 +145,12 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         bool rrt_finished = false;
 
         // Object pos limits
-        /*const rw::models::Device::QBox bounds_left = {
-            rw::math::Q(6, -2.8, -2.0, 0.6, -2.0, 0.5, -1.5),
-            rw::math::Q(6, -0.8, -0.0, 2.0,  1.5, 2.5,  1.5)};*/
         const rw::models::Device::QBox bounds_left = {
             rw::math::Q(6, 0.000, -2.2, -2.2, -4.5, -3.000, -1.5),
             rw::math::Q(6, 3.142, -0.8, -0.8,  -1.5, 1.5,  1.5)};
-        /*const rw::models::Device::QBox bounds_left = {
-            rw::math::Q(6,  -3.142, -4.712, -3.142, -4.712, -3.142, -3.142),
-            rw::math::Q(6,  3.142, 1.571, 3.142, 1.571,  3.142,  3.142)};*/
-
-        /* const rw::models::Device::QBox bounds_right = {
-            rw::math::Q(6, -1.1, -1.3, 1.5, -0.6, 2.0, -0.1),
-            rw::math::Q(6, -0.9, -1.1, 1.9, -0.3, 2.3, 0.1)}; */
         const rw::models::Device::QBox bounds_right = {
             rw::math::Q(6,  0.000, -2.200, -2.200, -4.500, -3.000, -3.100),
             rw::math::Q(6,  3.142, -0.800, -1.000, -1.500,  0.000,  3.100)};
-        /*const rw::models::Device::QBox bounds_right = {
-            rw::math::Q(6,  -3.142, -4.712, -3.142, -4.712, -3.142, -3.142),
-            rw::math::Q(6,  3.142, 1.571, 3.142, 1.571,  3.142,  3.142)};*/
 
         const std::pair<double, double> x_lim = {-5,5};
         const std::pair<double, double> y_lim = {-5,5};
@@ -175,6 +164,8 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void update_state_loop(rw::kinematics::State *state);
         std::thread movetoobject_thread;
         void movetoobject();
+        std::thread movetohome_thread;
+        void movetohome();
         std::thread show_path_thread;
         void show_object_path();
         std::thread optimize_path_thread;

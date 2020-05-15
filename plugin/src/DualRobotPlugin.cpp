@@ -8,6 +8,7 @@ DualRobotPlugin::DualRobotPlugin():
     // Connect UI components to member functions
     connect(ui_home_button, SIGNAL(pressed()), this, SLOT(home_button()));
     connect(ui_button_movetoobject, SIGNAL(pressed()), this, SLOT(movetoobject_button()));
+    connect(ui_button_movetohome, SIGNAL(pressed()), this, SLOT(movetohome_button()));
     connect(ui_path_button, SIGNAL(pressed()), this, SLOT(path_button()));
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
@@ -69,6 +70,7 @@ void DualRobotPlugin::open(rw::models::WorkCell* workcell)
         UR_right = rws_wc->findDevice<rw::models::SerialDevice>("UR-6-85-5-A_Right");
         TCP_left = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Left");
         TCP_right = rws_wc->findFrame<rw::kinematics::Frame>("GraspTCP_Right");
+        rws_world = rws_wc->findFrame<rw::kinematics::Frame>("WORLD");
 
         pick_object = rws_wc->findFrame<rw::kinematics::MovableFrame>("pick_object");
         pick_platform = rws_wc->findFrame<rw::kinematics::Frame>("pick_platform");
@@ -119,10 +121,18 @@ void DualRobotPlugin::home_button()
 
 void DualRobotPlugin::movetoobject_button()
 {
-    set_status("moving to object...");
+    set_status("Moving to object...");
     if (movetoobject_thread.joinable())
         movetoobject_thread.join();
     movetoobject_thread = std::thread(&DualRobotPlugin::movetoobject, this);
+}
+
+void DualRobotPlugin::movetohome_button()
+{
+    set_status("Moving to home...");
+    if (movetohome_thread.joinable())
+        movetohome_thread.join();
+    movetohome_thread = std::thread(&DualRobotPlugin::movetohome, this);
 }
 
 void DualRobotPlugin::path_button()
@@ -188,6 +198,7 @@ rw::kinematics::State DualRobotPlugin::getPlaceState()
     rw::kinematics::State state = rws_wc->getDefaultState();
     UR_left->setQ(pickQ_left, state);
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), rws_world.get(), state);
     UR_left->setQ(placeQ_left, state);
     UR_right->setQ(placeQ_right, state);
 
@@ -263,10 +274,10 @@ void DualRobotPlugin::movetoobject()
 
     // Move arm 1
     std::vector<rw::math::Q> pathLeft;
-    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.1, pathLeft);
+    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.05, pathLeft);
 
     std::vector<rw::math::Q> pathRight;
-    createPathRRTConnect(UR_right, homeQ_right, pickQ_right, 0.1, pathRight);
+    createPathRRTConnect(UR_right, homeQ_right, pickQ_right, 0.05, pathRight);
 
     optimize_path(pathLeft, UR_left, state);
     optimize_path(pathRight, UR_right, state);
@@ -285,8 +296,37 @@ void DualRobotPlugin::movetoobject()
     }
 
     set_status("ok");
+}
 
-    std::cout << "Yikers Maly needs to do some work." << std::endl;
+void DualRobotPlugin::movetohome()
+{
+    rw::kinematics::State state = getPlaceState();
+
+    // Move arm 1
+    std::vector<rw::math::Q> pathLeft;
+    createPathRRTConnect(UR_left, placeQ_left, homeQ_left, 0.1, pathLeft);
+
+    std::vector<rw::math::Q> pathRight;
+    createPathRRTConnect(UR_right, placeQ_right, homeQ_right, 0.1, pathRight);
+
+    optimize_path(pathLeft, UR_left, state);
+    optimize_path(pathRight, UR_right, state);
+
+    for (unsigned int i = 0; i < pathLeft.size(); i++)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        UR_left->setQ(pathLeft[i], state);
+        getRobWorkStudio()->setState(state);
+    }
+    
+    for (unsigned int i = 0; i < pathRight.size(); i++)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        UR_right->setQ(pathRight[i], state);
+        getRobWorkStudio()->setState(state);
+    }
+
+    set_status("ok");
 }
 
 void DualRobotPlugin::show_object_path()
@@ -487,7 +527,7 @@ void DualRobotPlugin::show_optimized_object_path()
 void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 {
     // Set state to home
-    home_button();
+    //home_button();
 
     // Clone state to work with
     rw::kinematics::State state_clone = getPickState();
@@ -496,7 +536,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
     object_place_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_placeQ);
 
-    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    //state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
