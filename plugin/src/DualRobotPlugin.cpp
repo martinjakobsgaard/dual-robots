@@ -715,6 +715,127 @@ std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::fin
     return std::make_pair(closest_Q, closest_dist);
 }
 
+void DualRobotPlugin::optimize_path(std::vector<rw::math::Q> &path, rw::models::Device::Ptr device, rw::kinematics::State state, double lerp_dist, unsigned int max_failed_iterations)
+{
+    const auto lerp = [](const rw::math::Q &a, const rw::math::Q &b, double t)
+    {
+        return (1 - t) * a + t * b;
+    };
+
+    std::vector<rw::math::Q> optimized_path;
+    optimized_path.push_back(path.at(0));
+
+    for (unsigned int i = 0; i < path.size()-1; i++)
+    {
+        unsigned int lerp_points = Qdist(path[i], path[i+1])/lerp_dist+1;
+
+        for (unsigned int j = 1; j < lerp_points+1; j++)
+        {
+            rw::math::Q newQ = lerp(path[i], path[i+1], j/(double)lerp_points);
+
+            optimized_path.push_back(newQ);
+        }
+    }
+
+    // Shortcutting algorithm
+    unsigned int failed_iterations = 0;
+    unsigned int success_iterations = 0;
+    bool failed_this_iteration = false;
+
+    while (failed_iterations < max_failed_iterations)
+    {
+        failed_this_iteration = false;
+
+        // Choose two random points
+        std::uniform_int_distribution<unsigned int> dist(0, optimized_path.size()-1);
+        unsigned int A = dist(eng);
+        unsigned int B = dist(eng);
+
+        if (A == B)
+        {
+            continue;
+        }
+        else if (A > B)
+        {
+            unsigned int t = A;
+            A = B;
+            B = t;
+        }
+
+        rw::math::Q nodeA = optimized_path[A];
+        rw::math::Q nodeB = optimized_path[B];
+
+        // Make sure it shortcuts
+        {
+            double path_len = 0;
+            for (unsigned int i = A; i < B; i++)
+            {
+                path_len += Qdist(optimized_path[i], optimized_path[i+1]);
+            }
+
+            if (path_len - Qdist(nodeA, nodeB) < 0.001)
+            {
+                continue;
+            }
+        }
+
+        // Find points between node A and B
+        std::vector<rw::math::Q> lerp_Qs;
+        lerp_Qs.push_back(nodeA);
+
+        {
+            unsigned int lerp_points = Qdist(nodeA, nodeB)/lerp_dist+1;
+
+            for (unsigned int i = 1; (i < lerp_points+1) && (!failed_this_iteration); i++)
+            {
+                rw::math::Q newQ = lerp(nodeA, nodeB, i/(double)lerp_points);
+
+                rw::kinematics::State col_state = state;
+                device->setQ(newQ, col_state);
+                if (collisionDetector->inCollision(col_state, NULL, true))
+                {
+                    failed_this_iteration = true;
+                    break;
+                }
+
+                lerp_Qs.push_back(newQ);
+            }
+        }
+
+        if (failed_this_iteration)
+        {
+            failed_iterations++;
+            continue;
+        }
+        else
+        {
+            success_iterations++;
+            set_status("shortcuts so far = " + std::to_string(success_iterations));
+            failed_iterations = 0;
+        }
+
+        std::vector<rw::math::Q> new_path;
+
+        for (unsigned int i = 0; i < optimized_path.size(); i++)
+        {
+            if ((i <= A) || (B <= i))
+            {
+                new_path.push_back(optimized_path[i]);
+            }
+            else
+            {
+                new_path.insert(std::end(new_path), std::begin(lerp_Qs), std::end(lerp_Qs));
+                i = B;
+            }
+        }
+
+        optimized_path = new_path;
+    }
+
+    path = optimized_path;
+    set_status("succesful shortcuts = " + std::to_string(success_iterations));
+}
+
 void DualRobotPlugin::test(std::string test_type)
 {
     set_status("doing test: " + test_type);
