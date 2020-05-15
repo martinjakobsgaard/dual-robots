@@ -198,8 +198,8 @@ rw::kinematics::State DualRobotPlugin::getPlaceState()
     rw::kinematics::State state = rws_wc->getDefaultState();
     UR_left->setQ(pickQ_left, state);
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
-    rw::kinematics::Kinematics::gripFrame(pick_object.get(), rws_world.get(), state);
     UR_left->setQ(placeQ_left, state);
+    rw::kinematics::Kinematics::gripFrame(pick_object.get(), rws_world.get(), state);
     UR_right->setQ(placeQ_right, state);
 
     return state;
@@ -510,8 +510,7 @@ void DualRobotPlugin::optimize_object_path()
 
 void DualRobotPlugin::show_optimized_object_path()
 {
-    UR_left->setQ(pickQ_left, rws_state);
-    rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), rws_state);
+    getRobWorkStudio()->setState(getPickState());
 
     for (const ObjPathQ &step : optimized_object_path)
     {
