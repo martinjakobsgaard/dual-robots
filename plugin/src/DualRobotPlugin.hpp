@@ -135,7 +135,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_pick_tree;
         std::unique_ptr<rwlibs::pathplanners::RRTTree<ObjPathQ>> object_place_tree;
 
-        const unsigned int rrt_maxiterations = 15000;
+        const unsigned int rrt_maxiterations = 100000;
 
         std::vector<ObjPathQ> object_path;
         std::vector<ObjPathQ> optimized_object_path;
@@ -182,6 +182,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void find_object_path(bool rrt_connect, double rrt_epsilon);
         double Qdist(const rw::math::Q &a, const rw::math::Q &b, bool use_weights = true) const;
         std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> find_closest(const rwlibs::pathplanners::RRTTree<ObjPathQ> *tree, rw::math::Q q) const;
+        void optimize_path(std::vector<rw::math::Q> &path, rw::models::Device::Ptr device, rw::kinematics::State state, double lerp_dist = 0.05, unsigned int max_failed_iterations = 10);
 
         // Random engine
         std::random_device rd;
