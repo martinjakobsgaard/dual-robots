@@ -717,10 +717,34 @@ std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::fin
 
 void DualRobotPlugin::test(std::string test_type)
 {
+    set_status("doing test: " + test_type);
+
     if (test_type == "RRT - epsilon")
     {
         std::ofstream data("/tmp/test_RRT_epsilon.csv");
-        data << "i,eps,t" << std::endl;
+        data << "eps,t" << std::endl;
+
+        const unsigned int iterations_per_epsilon = 5;
+
+        for (unsigned int e = 2; e <= 10; e++)
+        {
+            double eps = e*0.05;
+
+            unsigned int avg_ms = 0;
+            for (unsigned int i = 0; i < iterations_per_epsilon; i++)
+            {
+                std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+                find_object_path(true, eps);
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+                avg_ms += std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            }
+            avg_ms /= iterations_per_epsilon;
+
+            data << eps << ',' << avg_ms << std::endl;
+        }
+
+        set_status("RRT epsilon test done");
     }
     else
     {
