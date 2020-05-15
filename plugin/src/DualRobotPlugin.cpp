@@ -41,7 +41,7 @@ void DualRobotPlugin::initialize()
     }
     else
     {
-        rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene2.wc.xml");
+        rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene.wc.xml");
 
         if (wc == nullptr)
         {
@@ -186,8 +186,8 @@ rw::kinematics::State DualRobotPlugin::getPickState()
     rw::kinematics::State state = rws_wc->getDefaultState();
     UR_left->setQ(pickQ_left, state);
     UR_right->setQ(pickQ_right, state);
-    rws_wc->findDevice<rw::models::Device>("WSG50_Left")->setQ(rw::math::Q(1,0.025), state);
-    rws_wc->findDevice<rw::models::Device>("WSG50_Right")->setQ(rw::math::Q(1,0.025), state);
+    rws_wc->findDevice<rw::models::Device>("WSG50_Left")->setQ(rw::math::Q(1,0.035), state);
+    rws_wc->findDevice<rw::models::Device>("WSG50_Right")->setQ(rw::math::Q(1,0.035), state);
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
 
     return state;
@@ -535,7 +535,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
     object_place_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_placeQ);
 
-    //state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
@@ -597,16 +597,6 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
             newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ))*rrt_eps;
         }
 
-        // Check collision for left robot arm + object
-        {
-            rw::kinematics::State test_state = state_clone;
-            UR_left->setQ(newQ, test_state);
-            if (collisionDetector->inCollision(test_state, NULL, true))
-            {
-                continue;
-            }
-        }
-
         // Find right UR Q with IK
         std::vector<rw::math::Q> rightQs;
 
@@ -628,6 +618,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
         for (const auto &q : rightQs)
         {
             rw::kinematics::State test_state = state_clone;
+            UR_left->setQ(newQ, test_state);
             UR_right->setQ(q, test_state);
             if (!collisionDetector->inCollision(test_state, NULL, true)
                 && Qdist(q, main_closest_Q->getValue().Q_right) < rrt_eps*3
@@ -636,6 +627,18 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
                 colfree_rightQs.push_back(q);
             }
         }
+
+        /*
+        // Check collision for left robot arm + object
+        {
+            rw::kinematics::State test_state = state_clone;
+            UR_left->setQ(newQ, test_state);
+            if (collisionDetector->inCollision(test_state, NULL, true))
+            {
+                continue;
+            }
+        }
+        */
 
         if (colfree_rightQs.size() == 0)
         {
