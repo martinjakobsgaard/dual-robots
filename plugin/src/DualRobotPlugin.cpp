@@ -40,7 +40,7 @@ void DualRobotPlugin::initialize()
     }
     else
     {
-        rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene.wc.xml");
+        rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(std::string(projectpath) + "/workcell/Scene2.wc.xml");
 
         if (wc == nullptr)
         {
@@ -176,6 +176,8 @@ rw::kinematics::State DualRobotPlugin::getPickState()
     rw::kinematics::State state = rws_wc->getDefaultState();
     UR_left->setQ(pickQ_left, state);
     UR_right->setQ(pickQ_right, state);
+    rws_wc->findDevice<rw::models::Device>("WSG50_Left")->setQ(rw::math::Q(1,0.025), state);
+    rws_wc->findDevice<rw::models::Device>("WSG50_Right")->setQ(rw::math::Q(1,0.025), state);
     rw::kinematics::Kinematics::gripFrame(pick_object.get(), TCP_left.get(), state);
 
     return state;
