@@ -12,6 +12,7 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
     connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
+    connect(ui_button_test, SIGNAL(pressed()), this, SLOT(test_button()));
 
     ui_spinbox_epsilon->setPrefix("\u03B5 = ");
 
@@ -156,6 +157,15 @@ void DualRobotPlugin::show_optimized_path_button()
     show_optimized_path_thread = std::thread(&DualRobotPlugin::show_optimized_object_path, this);
 }
 
+void DualRobotPlugin::test_button()
+{
+    const std::string test_text = ui_combobox_test->currentText().toStdString();
+
+    if (test_thread.joinable())
+        test_thread.join();
+    test_thread = std::thread(&DualRobotPlugin::test, this, test_text);
+}
+
 rw::kinematics::State DualRobotPlugin::getHomeState()
 {
     return rws_wc->getDefaultState();
@@ -216,7 +226,7 @@ void DualRobotPlugin::createPathRRTConnect(rw::models::SerialDevice::Ptr robot, 
     rw::pathplanning::QToQPlanner::Ptr planner = rwlibs::pathplanners::RRTPlanner::makeQToQPlanner(constraint, sampler, metric, epsilon, rwlibs::pathplanners::RRTPlanner::RRTConnect);
 
     rw::trajectory::QPath qpath;
-    std::cout << "Generating path with NO max. time. Be patient or cancel manually... ";
+    std::cout << "Generating path with NO max. time. Be patient or cancel manually... " << std::flush;
     planner->query(from, to, qpath);
     std::cout << "You done it!" << std::endl;
     
@@ -715,6 +725,20 @@ std::pair<rwlibs::pathplanners::RRTNode<ObjPathQ>*, double> DualRobotPlugin::fin
     }
 
     return std::make_pair(closest_Q, closest_dist);
+}
+
+void DualRobotPlugin::test(std::string test_type)
+{
+    if (test_type == "RRT - epsilon")
+    {
+        std::ofstream data("/tmp/test_RRT_epsilon.csv");
+        data << "i,eps,t" << std::endl;
+    }
+    else
+    {
+        set_status("unhandled test: " + test_type);
+        std::cout << "Unhandled test type: " << test_type << std::endl;
+    }
 }
 
 struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)

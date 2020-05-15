@@ -127,6 +127,49 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QLabel" name="ui_label_test">
+      <property name="text">
+       <string>Test</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QComboBox" name="ui_combobox_test">
+      <item>
+       <property name="text">
+        <string>Choose test</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>RRT - epsilon</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>RRT - type</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>RRT - Q sampling limits</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>RRT - Q distance weights</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="ui_button_test">
+      <property name="text">
+       <string>Perform test</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
  </widget>
