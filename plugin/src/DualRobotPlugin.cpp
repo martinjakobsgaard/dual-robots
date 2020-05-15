@@ -247,14 +247,26 @@ void DualRobotPlugin::update_state_loop(rw::kinematics::State *state)
 
 void DualRobotPlugin::movetoobject()
 {
-    std::vector<rw::math::Q> path;
-    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.1, path);
     rw::kinematics::State state = getHomeState();
+    
+    // Move arm 1
+    std::vector<rw::math::Q> pathLeft;
+    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.1, pathLeft);
 
-    for (const auto &q : path)
+    std::vector<rw::math::Q> pathRight;
+    createPathRRTConnect(UR_right, homeQ_right, pickQ_right, 0.1, pathRight);
+
+    for (const auto &q : pathLeft)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
         UR_left->setQ(q, state);
+        getRobWorkStudio()->setState(state);
+    }
+
+    for (const auto &q : pathRight)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        UR_right->setQ(q, state);
         getRobWorkStudio()->setState(state);
     }
     set_status("ok");
@@ -469,7 +481,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     object_pick_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_pickQ);
     object_place_tree = std::make_unique<rwlibs::pathplanners::RRTTree<ObjPathQ>>(obj_placeQ);
 
-    //state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
+    state_loop_thread = std::thread(&DualRobotPlugin::update_state_loop, this, &state_clone);
 
     // Create distributions for sampling
     std::uniform_real_distribution<double> q0d(bounds_left.first[0], bounds_left.second[0]);
