@@ -77,6 +77,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         void home_button();
         void movetoobject_button();
+        void movetohome_button();
         void path_button();
         void show_path_button();
         void optimize_path_button();
@@ -95,6 +96,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         rw::kinematics::Frame::Ptr TCP_right;
         rw::kinematics::MovableFrame::Ptr pick_object;
         rw::kinematics::Frame::Ptr pick_platform;
+        rw::kinematics::Frame::Ptr rws_world;
 
         rw::proximity::CollisionDetector::Ptr collisionDetector;
 
