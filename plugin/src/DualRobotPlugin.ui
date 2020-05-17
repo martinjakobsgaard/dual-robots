@@ -177,6 +177,13 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QPushButton" name="ui_button_demonstration">
+      <property name="text">
+       <string>Demonstration</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
  </widget>

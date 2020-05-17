@@ -14,6 +14,7 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
     connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
     connect(ui_button_test, SIGNAL(pressed()), this, SLOT(test_button()));
+    connect(ui_button_demonstration, SIGNAL(pressed()), this, SLOT(demonstration_button()));
 
     ui_spinbox_epsilon->setPrefix("\u03B5 = ");
 
@@ -182,6 +183,15 @@ void DualRobotPlugin::test_button()
     test_thread = std::thread(&DualRobotPlugin::test, this, test_text);
 }
 
+void DualRobotPlugin::demonstration_button()
+{
+    // Set initital status
+    set_status("Running demonstration...");
+    if (test_thread.joinable())
+        test_thread.join();
+    test_thread = std::thread(&DualRobotPlugin::demonstration, this);
+}
+
 rw::kinematics::State DualRobotPlugin::getHomeState()
 {
     return rws_wc->getDefaultState();
@@ -234,12 +244,11 @@ bool DualRobotPlugin::checkCollisions(rw::models::Device::Ptr device, const rw::
     return true;
 }
 
-void DualRobotPlugin::createPathRRTConnect(rw::models::SerialDevice::Ptr robot, rw::math::Q from, rw::math::Q to, double epsilon, std::vector<rw::math::Q> &path)
+void DualRobotPlugin::createPathRRTConnect(rw::models::SerialDevice::Ptr robot, rw::math::Q from, rw::math::Q to, double epsilon, std::vector<rw::math::Q> &path, rw::kinematics::State state)
 {
-    robot->setQ(from,rws_state);
-    getRobWorkStudio()->setState(rws_state);
+    robot->setQ(from,state);
 
-    rw::pathplanning::PlannerConstraint constraint = rw::pathplanning::PlannerConstraint::make(collisionDetector.get(),robot,rws_state);
+    rw::pathplanning::PlannerConstraint constraint = rw::pathplanning::PlannerConstraint::make(collisionDetector.get(),robot,state);
     rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeConstrained(rw::pathplanning::QSampler::makeUniform(robot),constraint.getQConstraintPtr());
     rw::math::QMetric::Ptr metric = rw::math::MetricFactory::makeEuclidean<rw::math::Q>();
     rw::pathplanning::QToQPlanner::Ptr planner = rwlibs::pathplanners::RRTPlanner::makeQToQPlanner(constraint, sampler, metric, epsilon, rwlibs::pathplanners::RRTPlanner::RRTConnect);
@@ -280,10 +289,10 @@ void DualRobotPlugin::movetoobject()
 
     // Move arm 1
     std::vector<rw::math::Q> pathLeft;
-    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.05, pathLeft);
+    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.05, pathLeft, getHomeState());
 
     std::vector<rw::math::Q> pathRight;
-    createPathRRTConnect(UR_right, homeQ_right, pickQ_right, 0.05, pathRight);
+    createPathRRTConnect(UR_right, homeQ_right, pickQ_right, 0.05, pathRight, getHomeState());
 
     optimize_path(pathLeft, UR_left, state);
     optimize_path(pathRight, UR_right, state);
@@ -310,10 +319,10 @@ void DualRobotPlugin::movetohome()
 
     // Move arm 1
     std::vector<rw::math::Q> pathLeft;
-    createPathRRTConnect(UR_left, placeQ_left, homeQ_left, 0.1, pathLeft);
+    createPathRRTConnect(UR_left, placeQ_left, homeQ_left, 0.1, pathLeft, getPlaceState());
 
     std::vector<rw::math::Q> pathRight;
-    createPathRRTConnect(UR_right, placeQ_right, homeQ_right, 0.1, pathRight);
+    createPathRRTConnect(UR_right, placeQ_right, homeQ_right, 0.1, pathRight, getPlaceState());
 
     optimize_path(pathLeft, UR_left, state);
     optimize_path(pathRight, UR_right, state);
@@ -930,6 +939,74 @@ void DualRobotPlugin::test(std::string test_type)
         set_status("unhandled test: " + test_type);
         std::cout << "Unhandled test type: " << test_type << std::endl;
     }
+}
+
+void DualRobotPlugin::demonstration()
+{
+    // Load needed states
+    rw::kinematics::State statePlace = getPlaceState();
+    rw::kinematics::State stateHome = getHomeState();
+
+    // Calculate optimized path for left manipulator: Home -> Object
+    std::vector<rw::math::Q> pathLeftHomeToObject;
+    createPathRRTConnect(UR_left, homeQ_left, pickQ_left, 0.05, pathLeftHomeToObject, getHomeState());
+    optimize_path(pathLeftHomeToObject, UR_left, getHomeState());
+
+    // Calculate optimized path for right manipulator: Home -> Object
+    std::vector<rw::math::Q> pathRightHomeToObject;
+    createPathRRTConnect(UR_right, homeQ_right, pickQ_right, 0.05, pathRightHomeToObject, getHomeState());
+    optimize_path(pathRightHomeToObject, UR_right, getHomeState());
+
+    // Calculate optimized path for left manipulator: Place -> Home
+    std::vector<rw::math::Q> pathLeftObjectToHome;
+    createPathRRTConnect(UR_left, placeQ_left, homeQ_left, 0.05, pathLeftObjectToHome, getPlaceState());
+    optimize_path(pathLeftObjectToHome, UR_left, getPlaceState());
+
+    // Calculate optimized path for right manipulator: Place -> Home
+    std::vector<rw::math::Q> pathRightObjectToHome;
+    createPathRRTConnect(UR_right, placeQ_right, homeQ_right, 0.05, pathRightObjectToHome, getPlaceState());
+    optimize_path(pathRightObjectToHome, UR_right, getPlaceState());
+
+    // Calculate path for robots with object
+    find_object_path(true, 0.05);
+    optimize_object_path();
+    
+    // Play robots home -> pick
+    set_status("Moving robots to object...");
+    unsigned int max_len = std::max(pathLeftHomeToObject.size(), pathRightHomeToObject.size());
+    for (unsigned int i = 0; i < max_len; i++)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        if (i < pathLeftHomeToObject.size())
+            UR_left->setQ(pathLeftHomeToObject[i], stateHome);
+
+        if (i < pathRightHomeToObject.size())
+            UR_right->setQ(pathRightHomeToObject[i], stateHome);
+
+        getRobWorkStudio()->setState(stateHome);
+    }
+
+    // Play path?
+    show_optimized_object_path();
+
+    // Play robots place-> home
+    set_status("Moving robots to home...");
+    for (unsigned int i = 0; i < pathLeftObjectToHome.size(); i++)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        UR_left->setQ(pathLeftObjectToHome[i], statePlace);
+        getRobWorkStudio()->setState(statePlace);
+    }
+    
+    for (unsigned int i = 0; i < pathRightObjectToHome.size(); i++)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        UR_right->setQ(pathRightObjectToHome[i], statePlace);
+        getRobWorkStudio()->setState(statePlace);
+    }
+
+    set_status("ok");
+
 }
 
 struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
