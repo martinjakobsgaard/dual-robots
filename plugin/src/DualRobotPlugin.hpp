@@ -124,7 +124,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
 
         const rw::math::Transform3D<> grabT_right = rw::math::Transform3D<>(
                 rw::math::Vector3D<>(0.000, -0.170, 0.100),
-                rw::math::RPY<>(0.000, 0.000, -1.571)
+                rw::math::RPY<>(3.145, 0.000, 1.571)
                 );
 
         const rw::math::Transform3D<> pickT = rw::math::Transform3D<>(
