@@ -914,9 +914,9 @@ void DualRobotPlugin::test(std::string test_type)
 
         const unsigned int iterations_per_epsilon = 5;
 
-        for (unsigned int e = 2; e <= 10; e++)
+        for (unsigned int e = 0; e < 25; e++)
         {
-            double eps = e*0.05;
+            double eps = 0.05+e*0.02;
 
             unsigned int avg_ms = 0;
             for (unsigned int i = 0; i < iterations_per_epsilon; i++)
@@ -930,6 +930,37 @@ void DualRobotPlugin::test(std::string test_type)
             avg_ms /= iterations_per_epsilon;
 
             data << eps << ',' << avg_ms << std::endl;
+        }
+
+        set_status("RRT epsilon test done");
+    }
+    else if (test_type == "RRT - type")
+    {
+        std::ofstream data("/tmp/test_RRT_type.csv");
+        data << "type,eps,t" << std::endl;
+
+        const unsigned int iterations_per_type = 50;
+
+        double eps = 0.30;
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(false, eps);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "0," << eps << ',' << ms << std::endl;
+        }
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(true, eps);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "1," << eps << ',' << ms << std::endl;
         }
 
         set_status("RRT epsilon test done");
