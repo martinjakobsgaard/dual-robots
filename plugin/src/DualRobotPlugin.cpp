@@ -615,20 +615,32 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
             rightQs = closedFormSolver->solve(targetT, test_state);
         }
 
+        // Sort collisionfree right Qs based on Q-distance to last rightQ
+        std::sort(rightQs.begin(), rightQs.end(),
+                [this, &main_closest_Q](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(main_closest_Q->getValue().Q_right, l) < this->Qdist(main_closest_Q->getValue().Q_right, r);}
+                );
+
         // Remove collision right UR Qs
         std::vector<rw::math::Q> colfree_rightQs;
 
-        for (const auto &q : rightQs)
         {
             rw::kinematics::State test_state = state_clone;
             UR_left->setQ(newQ, test_state);
-            UR_right->setQ(q, test_state);
 
-            if (!collisionDetector->inCollision(test_state, NULL, true)
-                && Qdist(q, main_closest_Q->getValue().Q_right) < rrt_eps*3
-               )
+            for (const auto &q : rightQs)
             {
-                colfree_rightQs.push_back(q);
+                if (Qdist(q, main_closest_Q->getValue().Q_right) > rrt_eps*3)
+                {
+                    break;
+                }
+
+                UR_right->setQ(q, test_state);
+
+                if (!collisionDetector->inCollision(test_state, NULL, true))
+                {
+                    colfree_rightQs.push_back(q);
+                    break;
+                }
             }
         }
 
@@ -636,11 +648,6 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
         {
             continue;
         }
-
-        // Sort collisionfree right Qs based on Q-distance to last rightQ
-        std::sort(colfree_rightQs.begin(), colfree_rightQs.end(),
-                [this, &main_closest_Q](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(main_closest_Q->getValue().Q_right, l) < this->Qdist(main_closest_Q->getValue().Q_right, r);}
-                );
 
         // Find robot configurations
         ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, colfree_rightQs.at(0)};
