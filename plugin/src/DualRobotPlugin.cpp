@@ -147,7 +147,7 @@ void DualRobotPlugin::path_button()
     set_status("finding object path...");
     if (rrt_thread.joinable())
         rrt_thread.join();
-    rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this, ui_radiobutton_rrtconnect->isChecked(), ui_spinbox_epsilon->value());
+    rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this, ui_radiobutton_rrtconnect->isChecked(), ui_spinbox_epsilon->value(), true, true);
 }
 
 void DualRobotPlugin::show_path_button()
@@ -538,7 +538,7 @@ void DualRobotPlugin::show_optimized_object_path()
     set_status("ok");
 }
 
-void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
+void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps, bool use_weights, bool use_limits)
 {
     // Clone state to work with
     rw::kinematics::State state_clone = getPickState();
@@ -560,7 +560,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     unsigned int iterations = 0;
     bool success = true;
 
-    rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
+    rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeUniform(UR_left);
 
     bool tree_switch = false;
 
@@ -580,7 +580,15 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
         }
 
         // Sample new 6D task-space object pos
-        rw::math::Q randQ(6, q0d(eng), q1d(eng), q2d(eng), q3d(eng), q4d(eng), q5d(eng));
+        rw::math::Q randQ;
+        if (use_limits)
+        {
+            randQ = rw::math::Q(6, q0d(eng), q1d(eng), q2d(eng), q3d(eng), q4d(eng), q5d(eng));
+        }
+        else
+        {
+            randQ = sampler->sample();
+        }
 
         // Find closest points in trees
         rwlibs::pathplanners::RRTNode<ObjPathQ> *main_closest_Q;
@@ -964,6 +972,37 @@ void DualRobotPlugin::test(std::string test_type)
         }
 
         set_status("RRT epsilon test done");
+    }
+    else if (test_type == "RRT - Q sampling limits")
+    {
+        std::ofstream data("/tmp/test_RRT_Qlimits.csv");
+        data << "type,eps,t" << std::endl;
+
+        const unsigned int iterations_per_type = 50;
+
+        double eps = 0.30;
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(true, eps, true, false);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "0," << eps << ',' << ms << std::endl;
+        }
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(true, eps, true, true);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "1," << eps << ',' << ms << std::endl;
+        }
+
+        set_status("RRT Q sampling limits test done");
     }
     else
     {
