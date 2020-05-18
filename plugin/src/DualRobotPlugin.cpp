@@ -922,9 +922,9 @@ void DualRobotPlugin::test(std::string test_type)
 
         const unsigned int iterations_per_epsilon = 5;
 
-        for (unsigned int e = 0; e < 25; e++)
+        for (unsigned int e = 0; e < 50; e++)
         {
-            double eps = 0.05+e*0.02;
+            double eps = 0.06+e*0.01;
 
             unsigned int avg_ms = 0;
             for (unsigned int i = 0; i < iterations_per_epsilon; i++)
@@ -947,9 +947,9 @@ void DualRobotPlugin::test(std::string test_type)
         std::ofstream data("/tmp/test_RRT_type.csv");
         data << "type,eps,t" << std::endl;
 
-        const unsigned int iterations_per_type = 50;
+        const unsigned int iterations_per_type = 500;
 
-        double eps = 0.30;
+        double eps = 0.20;
 
         for (unsigned int i = 0; i < iterations_per_type; i++)
         {
@@ -978,9 +978,9 @@ void DualRobotPlugin::test(std::string test_type)
         std::ofstream data("/tmp/test_RRT_Qlimits.csv");
         data << "type,eps,t" << std::endl;
 
-        const unsigned int iterations_per_type = 50;
+        const unsigned int iterations_per_type = 500;
 
-        double eps = 0.30;
+        double eps = 0.20;
 
         for (unsigned int i = 0; i < iterations_per_type; i++)
         {
@@ -1009,9 +1009,9 @@ void DualRobotPlugin::test(std::string test_type)
         std::ofstream data("/tmp/test_RRT_Qdist_weights.csv");
         data << "type,eps,t" << std::endl;
 
-        const unsigned int iterations_per_type = 50;
+        const unsigned int iterations_per_type = 500;
 
-        double eps = 0.30;
+        double eps = 0.20;
 
         for (unsigned int i = 0; i < iterations_per_type; i++)
         {
