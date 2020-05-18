@@ -632,7 +632,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps, bool us
             rightQs = closedFormSolver->solve(targetT, test_state);
         }
 
-        // Sort collisionfree right Qs based on Q-distance to last rightQ
+        // Sort right Qs based on Q-distance to last rightQ
         std::sort(rightQs.begin(), rightQs.end(),
                 [this, &use_weights, &main_closest_Q](const rw::math::Q &l, const rw::math::Q &r){return Qdist(main_closest_Q->getValue().Q_right, l, use_weights) < Qdist(main_closest_Q->getValue().Q_right, r, use_weights);}
                 );
