@@ -920,7 +920,7 @@ void DualRobotPlugin::test(std::string test_type)
         std::ofstream data("/tmp/test_RRT_epsilon.csv");
         data << "eps,t" << std::endl;
 
-        const unsigned int iterations_per_epsilon = 5;
+        const unsigned int iterations_per_epsilon = 50;
 
         for (unsigned int e = 0; e < 50; e++)
         {
