@@ -506,7 +506,7 @@ void DualRobotPlugin::optimize_object_path()
 
         for (unsigned int i = 0; i < optimized_object_path.size(); i++)
         {
-            if ((i <= A) || (B <= i))
+            if ((i < A) || (B <= i))
             {
                 new_path.push_back(optimized_object_path[i]);
             }
