@@ -147,7 +147,7 @@ void DualRobotPlugin::path_button()
     set_status("finding object path...");
     if (rrt_thread.joinable())
         rrt_thread.join();
-    rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this, ui_radiobutton_rrtconnect->isChecked(), ui_spinbox_epsilon->value());
+    rrt_thread = std::thread(&DualRobotPlugin::find_object_path, this, ui_radiobutton_rrtconnect->isChecked(), ui_spinbox_epsilon->value(), true, true);
 }
 
 void DualRobotPlugin::show_path_button()
@@ -506,7 +506,7 @@ void DualRobotPlugin::optimize_object_path()
 
         for (unsigned int i = 0; i < optimized_object_path.size(); i++)
         {
-            if ((i <= A) || (B <= i))
+            if ((i < A) || (B <= i))
             {
                 new_path.push_back(optimized_object_path[i]);
             }
@@ -538,7 +538,7 @@ void DualRobotPlugin::show_optimized_object_path()
     set_status("ok");
 }
 
-void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
+void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps, bool use_weights, bool use_limits)
 {
     // Clone state to work with
     rw::kinematics::State state_clone = getPickState();
@@ -560,7 +560,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
     unsigned int iterations = 0;
     bool success = true;
 
-    rw::pathplanning::QSampler::Ptr constrainedSampler = rw::pathplanning::QSampler::makeBoxDirectionSampler(bounds_left);
+    rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeUniform(UR_left);
 
     bool tree_switch = false;
 
@@ -580,7 +580,15 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
         }
 
         // Sample new 6D task-space object pos
-        rw::math::Q randQ(6, q0d(eng), q1d(eng), q2d(eng), q3d(eng), q4d(eng), q5d(eng));
+        rw::math::Q randQ;
+        if (use_limits)
+        {
+            randQ = rw::math::Q(6, q0d(eng), q1d(eng), q2d(eng), q3d(eng), q4d(eng), q5d(eng));
+        }
+        else
+        {
+            randQ = sampler->sample();
+        }
 
         // Find closest points in trees
         rwlibs::pathplanners::RRTNode<ObjPathQ> *main_closest_Q;
@@ -606,7 +614,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 
         if (main_closest_dist > rrt_eps)
         {
-            newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ))*rrt_eps;
+            newQ = nearQ+((randQ-nearQ)/Qdist(randQ, nearQ, use_weights))*rrt_eps;
         }
 
         // Find right UR Q with IK
@@ -626,7 +634,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 
         // Sort collisionfree right Qs based on Q-distance to last rightQ
         std::sort(rightQs.begin(), rightQs.end(),
-                [this, &main_closest_Q](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(main_closest_Q->getValue().Q_right, l) < this->Qdist(main_closest_Q->getValue().Q_right, r);}
+                [this, &use_weights, &main_closest_Q](const rw::math::Q &l, const rw::math::Q &r){return Qdist(main_closest_Q->getValue().Q_right, l, use_weights) < Qdist(main_closest_Q->getValue().Q_right, r, use_weights);}
                 );
 
         // Remove collision right UR Qs
@@ -638,7 +646,7 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps)
 
             for (const auto &q : rightQs)
             {
-                if (Qdist(q, main_closest_Q->getValue().Q_right) > rrt_eps*3)
+                if (Qdist(q, main_closest_Q->getValue().Q_right, use_weights) > rrt_eps*3)
                 {
                     break;
                 }
@@ -964,6 +972,68 @@ void DualRobotPlugin::test(std::string test_type)
         }
 
         set_status("RRT epsilon test done");
+    }
+    else if (test_type == "RRT - Q sampling limits")
+    {
+        std::ofstream data("/tmp/test_RRT_Qlimits.csv");
+        data << "type,eps,t" << std::endl;
+
+        const unsigned int iterations_per_type = 50;
+
+        double eps = 0.30;
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(true, eps, true, false);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "0," << eps << ',' << ms << std::endl;
+        }
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(true, eps, true, true);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "1," << eps << ',' << ms << std::endl;
+        }
+
+        set_status("RRT Q sampling limits test done");
+    }
+    else if (test_type == "RRT - Q distance weights")
+    {
+        std::ofstream data("/tmp/test_RRT_Qdist_weights.csv");
+        data << "type,eps,t" << std::endl;
+
+        const unsigned int iterations_per_type = 50;
+
+        double eps = 0.30;
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(true, eps, false, true);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "0," << eps << ',' << ms << std::endl;
+        }
+
+        for (unsigned int i = 0; i < iterations_per_type; i++)
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            find_object_path(true, eps, true, true);
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            unsigned int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+            data << "1," << eps << ',' << ms << std::endl;
+        }
+
+        set_status("RRT Q distance weights test done");
     }
     else
     {
