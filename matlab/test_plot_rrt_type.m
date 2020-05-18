@@ -20,16 +20,18 @@ subplot(121), histogram(rrt_t, 'BinEdges',edges1);
 %Fancy up the graph.
 grid on;
 xlim([0, 7000]);
-xlabel('Data Value', 'FontSize', 14);
-ylabel('Bin Count', 'FontSize', 14);
-title('Histogram of Data', 'FontSize', 14);
+ylim([0, 20]);
+ylabel('Frequency', 'FontSize', 14);
+xlabel('Time [ms]', 'FontSize', 14);
+title('Histogram of RRT', 'FontSize', 14);
 
 subplot(122), histogram(rrt_connect_t, 'BinEdges',edges2);
 %Fancy up the graph.
 grid on;
 xlim([0, 500]);
-xlabel('Data Value', 'FontSize', 14);
-ylabel('Bin Count', 'FontSize', 14);
-title('Histogram of Data', 'FontSize', 14);
+ylim([0, 20]);
+ylabel('Frequency', 'FontSize', 14);
+xlabel('Time [ms]', 'FontSize', 14);
+title('Histogram of RRT Connect', 'FontSize', 14);
 
 hold off
