@@ -174,13 +174,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
             rw::math::Q(6,  0.000, -2.200, -2.200, -4.500, -3.000, -3.100),
             rw::math::Q(6,  3.142, -0.800, -1.000, -1.500,  0.000,  3.100)};
 
-        const std::pair<double, double> x_lim = {-5,5};
-        const std::pair<double, double> y_lim = {-5,5};
-        const std::pair<double, double> z_lim = {-5,5};
-        const std::pair<double, double> R_lim = {-M_PI_2, M_PI_2};
-        const std::pair<double, double> P_lim = {-M_PI_2 ,M_PI_2};
-        const std::pair<double, double> Y_lim = {-M_PI_2, M_PI_2};
-
         // Misc methods
         std::thread state_loop_thread;
         void update_state_loop(rw::kinematics::State *state);
