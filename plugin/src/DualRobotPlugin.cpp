@@ -471,10 +471,10 @@ void DualRobotPlugin::optimize_object_path()
         std::vector<rw::math::Q> rightQs;
 
         UR_left->setQ(leftQ, state);
-        rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(this->rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), this->rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), state);
-        rw::math::Transform3D<> targetT = frameBaseTObj * this->grabT_right;
+        rw::math::Transform3D<> frameBaseTObj = rw::kinematics::Kinematics::frameTframe(rws_wc->findFrame<rw::kinematics::Frame>("UR-6-85-5-A_Right.BaseMov"), rws_wc->findFrame<rw::kinematics::Frame>("pick_object"), state);
+        rw::math::Transform3D<> targetT = frameBaseTObj * grabT_right;
 
-        rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(this->UR_right, state));
+        rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr( new rw::invkin::ClosedFormIKSolverUR(UR_right, state));
 
         // Return solution configurations
         rightQs = closedFormSolver->solve(targetT, state);
@@ -487,7 +487,7 @@ void DualRobotPlugin::optimize_object_path()
 
         // Sort collisionfree right Qs based on Q-distance to last rightQ
         std::sort(rightQs.begin(), rightQs.end(),
-                [this, &closeQ](const rw::math::Q &l, const rw::math::Q &r){return this->Qdist(closeQ, l) < this->Qdist(closeQ, r);}
+                [this, &closeQ](const rw::math::Q &l, const rw::math::Q &r){return Qdist(closeQ, l) < Qdist(closeQ, r);}
                 );
 
         return rightQs[0];
