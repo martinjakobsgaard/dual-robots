@@ -1173,7 +1173,7 @@ void DualRobotPlugin::demonstration()
     // Calculate path for robots with object
     find_object_path(true, 0.05);
     optimize_object_path();
-    
+
     // Play robots home -> pick
     set_status("Moving robots to object...");
     unsigned int max_len = std::max(pathLeftHomeToObject.size(), pathRightHomeToObject.size());
@@ -1200,7 +1200,7 @@ void DualRobotPlugin::demonstration()
         UR_left->setQ(pathLeftObjectToHome[i], statePlace);
         getRobWorkStudio()->setState(statePlace);
     }
-    
+
     for (unsigned int i = 0; i < pathRightObjectToHome.size(); i++)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(60));
@@ -1209,25 +1209,4 @@ void DualRobotPlugin::demonstration()
     }
 
     set_status("ok");
-
-}
-
-struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r)
-{
-    return {l.x+r.x, l.y+r.y, l.z+r.z, l.R+r.R, l.P+r.P, l.Y+r.Y};
-}
-
-struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r)
-{
-    return {l.x-r.x, l.y-r.y, l.z-r.z, l.R-r.R, l.P-r.P, l.Y-r.Y};
-}
-
-struct ObjQ operator*(const struct ObjQ &l, const double n)
-{
-    return {l.x*n, l.y*n, l.z*n, l.R*n, l.P*n, l.Y*n};
-}
-
-struct ObjQ operator/(const struct ObjQ &l, const double n)
-{
-    return {l.x/n, l.y/n, l.z/n, l.R/n, l.P/n, l.Y/n};
 }

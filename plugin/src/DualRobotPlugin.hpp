@@ -69,22 +69,13 @@ struct ObjQ
                 break;
         }
     }
-
-    double dist() const {return std::sqrt(x*x + y*y + z*z + R*R + P*P + Y*Y);};
 };
-
-struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r);
-struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r);
-struct ObjQ operator*(const struct ObjQ &l, const double n);
-struct ObjQ operator/(const struct ObjQ &l, const double n);
 
 struct ObjPathQ
 {
     ObjQ Q_obj = {0, 0, 0, 0, 0, 0};
     rw::math::Q Q_left;
     rw::math::Q Q_right;
-
-    double dist() const {return Q_obj.dist();};
 };
 
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
