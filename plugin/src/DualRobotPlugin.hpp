@@ -41,6 +41,35 @@ struct ObjQ
     double P;
     double Y;
 
+    double operator[](unsigned int i) const
+    {
+        switch (i)
+        {
+            case 0:
+                return x;
+                break;
+            case 1:
+                return y;
+                break;
+            case 2:
+                return z;
+                break;
+            case 3:
+                return R;
+                break;
+            case 4:
+                return P;
+                break;
+            case 5:
+                return Y;
+                break;
+            default:
+                std::cerr << "Wrong index on ObjQ[]" << std::endl;
+                return x;
+                break;
+        }
+    }
+
     double dist() const {return std::sqrt(x*x + y*y + z*z + R*R + P*P + Y*Y);};
 };
 
@@ -82,6 +111,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void show_path_button();
         void optimize_path_button();
         void show_optimized_path_button();
+        void print_tree();
         void test_button();
         void demonstration_button();
 

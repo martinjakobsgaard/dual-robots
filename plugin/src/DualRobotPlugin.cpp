@@ -13,6 +13,7 @@ DualRobotPlugin::DualRobotPlugin():
     connect(ui_show_path_button, SIGNAL(pressed()), this, SLOT(show_path_button()));
     connect(ui_optimize_path_button, SIGNAL(pressed()), this, SLOT(optimize_path_button()));
     connect(ui_show_optimized_path_button, SIGNAL(pressed()), this, SLOT(show_optimized_path_button()));
+    connect(ui_button_printtree, SIGNAL(pressed()), this, SLOT(print_tree()));
     connect(ui_button_test, SIGNAL(pressed()), this, SLOT(test_button()));
     connect(ui_button_demonstration, SIGNAL(pressed()), this, SLOT(demonstration_button()));
 
@@ -172,6 +173,103 @@ void DualRobotPlugin::show_optimized_path_button()
     if (show_optimized_path_thread.joinable())
         show_optimized_path_thread.join();
     show_optimized_path_thread = std::thread(&DualRobotPlugin::show_optimized_object_path, this);
+}
+
+void DualRobotPlugin::print_tree()
+{
+    std::cout << "Printing to files" << std::endl;
+    std::string qnodes_filename = "/tmp/RRT_tree_qnodes.csv";
+    std::string nodes_filename = "/tmp/RRT_tree_nodes.csv";
+    std::string qpath_filename = "/tmp/RRT_tree_qpath.csv";
+    std::string path_filename = "/tmp/RRT_tree_path.csv";
+
+    set_status("printing tree to " + qnodes_filename + " and " + nodes_filename);
+
+    std::ofstream qnodes_file(qnodes_filename);
+    std::ofstream nodes_file(nodes_filename);
+    qnodes_file << "q0,q1,q2,q3,q4,q5\n";
+    nodes_file << "x,y,z,R,P,Y\n";
+    auto it_pick = object_pick_tree->getNodes();
+    for (auto ptr = it_pick.first; ptr < it_pick.second; ptr++)
+    {
+        rw::math::Q q = (*ptr)->getValue().Q_left;
+        ObjQ T = (*ptr)->getValue().Q_obj;
+
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            qnodes_file << q[i];
+            nodes_file << T[i];
+
+            if (i < 5)
+            {
+                qnodes_file << ',';
+                nodes_file << ',';
+            }
+            else
+            {
+                qnodes_file << '\n';
+                nodes_file << '\n';
+            }
+        }
+    }
+    auto it_place = object_place_tree->getNodes();
+    for (auto ptr = it_place.first; ptr < it_place.second; ptr++)
+    {
+        rw::math::Q q = (*ptr)->getValue().Q_left;
+        ObjQ T = (*ptr)->getValue().Q_obj;
+
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            qnodes_file << q[i];
+            nodes_file << T[i];
+
+            if (i < 5)
+            {
+                qnodes_file << ',';
+                nodes_file << ',';
+            }
+            else
+            {
+                qnodes_file << '\n';
+                nodes_file << '\n';
+            }
+        }
+    }
+
+    qnodes_file.close();
+    nodes_file.close();
+
+    set_status("printing path to " + qpath_filename + " and " + path_filename);
+
+    std::ofstream qpath_file(qpath_filename);
+    std::ofstream path_file(path_filename);
+    qpath_file << "q0,q1,q2,q3,q4,q5\n";
+    path_file << "x,y,z,R,P,Y\n";
+
+    for (const auto &[T, q, qr] : object_path)
+    {
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            qpath_file << q[i];
+            path_file << T[i];
+
+            if (i < 5)
+            {
+                qpath_file << ',';
+                path_file << ',';
+            }
+            else
+            {
+                qpath_file << '\n';
+                path_file << '\n';
+            }
+        }
+    }
+
+    qpath_file.close();
+    path_file.close();
+
+    set_status("done printing");
 }
 
 void DualRobotPlugin::test_button()
@@ -667,7 +765,11 @@ void DualRobotPlugin::find_object_path(bool rrt_connect, double rrt_eps, bool us
         }
 
         // Find robot configurations
-        ObjPathQ new_node = {{0, 0, 0, 0, 0, 0}, newQ, colfree_rightQs.at(0)};
+        UR_left->setQ(newQ, state_clone);
+        rw::math::Transform3D<> ObjT = pick_object->wTf(state_clone);
+        rw::math::RPY<> ObjRPY = rw::math::RPY<>(ObjT.R());
+        rw::math::Vector3D<> ObjP = ObjT.P();
+        ObjPathQ new_node = {{ObjP[0], ObjP[1], ObjP[2], ObjRPY[0], ObjRPY[1], ObjRPY[2]}, newQ, colfree_rightQs.at(0)};
 
         // Add node to tree
         if (tree_switch)
