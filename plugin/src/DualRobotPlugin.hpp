@@ -138,12 +138,12 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const rw::math::Q homeQ_left  = rw::math::Q(6,  3.142, -1.571, -1.571, -1.571, 1.571, 0.000);
         const rw::math::Q homeQ_right = rw::math::Q(6,  0.000, -1.571, -1.571, -1.571, 1.571, 0.000);
 
-        const ObjQ pick_loc = {0, 0, 0, 0, 0, 0};
+        const ObjQ pick_loc = {0.347, 0.000, 0.100, 0, 0, 0};
         const rw::math::Q pickQ_left  = rw::math::Q(6,  2.590, -1.905, -1.767, -2.614, -0.551,  0.000);
         const rw::math::Q pickQ_right = rw::math::Q(6,  1.005, -1.911, -1.754, -2.625, -2.137,  0.000);
         const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
 
-        const ObjQ place_loc = {2, 2, 2, 0, 0, 0};
+        const ObjQ place_loc = {0.351, -0.099, 0.005, 0.002, 0.001, -1.572};
         const rw::math::Q placeQ_left   = rw::math::Q(6,  0.999, -1.911, -1.757, -2.615, -2.137,  0.000);
         const rw::math::Q placeQ_right  = rw::math::Q(6,  2.591, -1.905, -1.767, -2.614, -0.551,  0.000);
         const ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
