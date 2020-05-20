@@ -182,6 +182,7 @@ void DualRobotPlugin::print_tree()
     std::string nodes_filename = "/tmp/RRT_tree_nodes.csv";
     std::string qpath_filename = "/tmp/RRT_tree_qpath.csv";
     std::string path_filename = "/tmp/RRT_tree_path.csv";
+    std::string optimized_path_filename = "/tmp/RRT_tree_optimized_path.csv";
 
     set_status("printing tree to " + qnodes_filename + " and " + nodes_filename);
 
@@ -241,10 +242,29 @@ void DualRobotPlugin::print_tree()
 
     set_status("printing path to " + qpath_filename + " and " + path_filename);
 
+    std::ofstream optimized_path_file(optimized_path_filename);
     std::ofstream qpath_file(qpath_filename);
     std::ofstream path_file(path_filename);
     qpath_file << "q0,q1,q2,q3,q4,q5\n";
     path_file << "x,y,z,R,P,Y\n";
+    optimized_path_file << "x,y,z,R,P,Y\n";;
+
+    for (const auto &[T, q, qr] : optimized_object_path)
+    {
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            optimized_path_file << T[i];
+
+            if (i < 5)
+            {
+                optimized_path_file << ',';
+            }
+            else
+            {
+                optimized_path_file << '\n';
+            }
+        }
+    }
 
     for (const auto &[T, q, qr] : object_path)
     {
@@ -266,6 +286,7 @@ void DualRobotPlugin::print_tree()
         }
     }
 
+    optimized_path_file.close();
     qpath_file.close();
     path_file.close();
 
