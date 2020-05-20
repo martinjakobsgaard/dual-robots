@@ -1,5 +1,5 @@
 clc;clear;close;
-table = readtable('/tmp/test_RRT_epsilon.csv');
+table = readtable('/home/martin/Desktop/test_epsilon_rrt_connect.csv');
 
 x = table.eps;
 y = table.t;
