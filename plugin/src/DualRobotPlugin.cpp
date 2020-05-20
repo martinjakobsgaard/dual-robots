@@ -529,8 +529,12 @@ void DualRobotPlugin::optimize_object_path()
 
             rw::math::Q rightQ = rightIK(test_state, leftQ, optimized_object_path[optimized_object_path.size()-1].Q_right);
 
+            UR_left->setQ(leftQ, test_state);
+            rw::math::Transform3D<> ObjT = pick_object->wTf(test_state);
+            rw::math::RPY<> ObjRPY = rw::math::RPY<>(ObjT.R());
+            rw::math::Vector3D<> ObjP = ObjT.P();
             optimized_object_path.push_back(
-                    {{0,0,0,0,0,0},
+                    {{ObjP[0], ObjP[1], ObjP[2], ObjRPY[0], ObjRPY[1], ObjRPY[2]},
                     leftQ,
                     rightQ
                     });
@@ -601,8 +605,12 @@ void DualRobotPlugin::optimize_object_path()
                     break;
                 }
 
+                UR_left->setQ(leftQ, test_state);
+                rw::math::Transform3D<> ObjT = pick_object->wTf(test_state);
+                rw::math::RPY<> ObjRPY = rw::math::RPY<>(ObjT.R());
+                rw::math::Vector3D<> ObjP = ObjT.P();
                 lerp_Qs.push_back(
-                        {{0,0,0,0,0,0},
+                        {{ObjP[0], ObjP[1], ObjP[2], ObjRPY[0], ObjRPY[1], ObjRPY[2]},
                         leftQ,
                         rightQ
                         });
