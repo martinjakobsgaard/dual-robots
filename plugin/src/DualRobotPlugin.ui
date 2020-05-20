@@ -135,6 +135,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QPushButton" name="ui_button_printtree">
+      <property name="text">
+       <string>Print path tree</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="ui_label_test">
       <property name="text">
        <string>Test</string>

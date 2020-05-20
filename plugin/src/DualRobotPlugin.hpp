@@ -41,21 +41,41 @@ struct ObjQ
     double P;
     double Y;
 
-    double dist() const {return std::sqrt(x*x + y*y + z*z + R*R + P*P + Y*Y);};
+    double operator[](unsigned int i) const
+    {
+        switch (i)
+        {
+            case 0:
+                return x;
+                break;
+            case 1:
+                return y;
+                break;
+            case 2:
+                return z;
+                break;
+            case 3:
+                return R;
+                break;
+            case 4:
+                return P;
+                break;
+            case 5:
+                return Y;
+                break;
+            default:
+                std::cerr << "Wrong index on ObjQ[]" << std::endl;
+                return x;
+                break;
+        }
+    }
 };
-
-struct ObjQ operator+(const struct ObjQ &l, const struct ObjQ &r);
-struct ObjQ operator-(const struct ObjQ &l, const struct ObjQ &r);
-struct ObjQ operator*(const struct ObjQ &l, const double n);
-struct ObjQ operator/(const struct ObjQ &l, const double n);
 
 struct ObjPathQ
 {
     ObjQ Q_obj = {0, 0, 0, 0, 0, 0};
     rw::math::Q Q_left;
     rw::math::Q Q_right;
-
-    double dist() const {return Q_obj.dist();};
 };
 
 class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlugin
@@ -82,6 +102,7 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         void show_path_button();
         void optimize_path_button();
         void show_optimized_path_button();
+        void print_tree();
         void test_button();
         void demonstration_button();
 
@@ -108,12 +129,12 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const rw::math::Q homeQ_left  = rw::math::Q(6,  3.142, -1.571, -1.571, -1.571, 1.571, 0.000);
         const rw::math::Q homeQ_right = rw::math::Q(6,  0.000, -1.571, -1.571, -1.571, 1.571, 0.000);
 
-        const ObjQ pick_loc = {0, 0, 0, 0, 0, 0};
+        const ObjQ pick_loc = {0.347, 0.000, 0.100, 0, 0, 0};
         const rw::math::Q pickQ_left  = rw::math::Q(6,  2.590, -1.905, -1.767, -2.614, -0.551,  0.000);
         const rw::math::Q pickQ_right = rw::math::Q(6,  1.005, -1.911, -1.754, -2.625, -2.137,  0.000);
         const ObjPathQ obj_pickQ = {pick_loc, pickQ_left, pickQ_right};
 
-        const ObjQ place_loc = {2, 2, 2, 0, 0, 0};
+        const ObjQ place_loc = {-0.353, -0.003 , 0.101, -0.005, -0.002, -0.002};
         const rw::math::Q placeQ_left   = rw::math::Q(6,  0.999, -1.911, -1.757, -2.615, -2.137,  0.000);
         const rw::math::Q placeQ_right  = rw::math::Q(6,  2.591, -1.905, -1.767, -2.614, -0.551,  0.000);
         const ObjPathQ obj_placeQ = {place_loc, placeQ_left, placeQ_right};
@@ -152,13 +173,6 @@ class DualRobotPlugin: public rws::RobWorkStudioPlugin, private Ui::DualRobotPlu
         const rw::models::Device::QBox bounds_right = {
             rw::math::Q(6,  0.000, -2.200, -2.200, -4.500, -3.000, -3.100),
             rw::math::Q(6,  3.142, -0.800, -1.000, -1.500,  0.000,  3.100)};
-
-        const std::pair<double, double> x_lim = {-5,5};
-        const std::pair<double, double> y_lim = {-5,5};
-        const std::pair<double, double> z_lim = {-5,5};
-        const std::pair<double, double> R_lim = {-M_PI_2, M_PI_2};
-        const std::pair<double, double> P_lim = {-M_PI_2 ,M_PI_2};
-        const std::pair<double, double> Y_lim = {-M_PI_2, M_PI_2};
 
         // Misc methods
         std::thread state_loop_thread;
