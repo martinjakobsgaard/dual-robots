@@ -1166,6 +1166,48 @@ void DualRobotPlugin::test(std::string test_type)
 
         set_status("RRT Q distance weights test done");
     }
+    else if (test_type == "Shortcut")
+    {
+        const auto dist = [](const ObjQ &l, const ObjQ &r)
+        {
+            return std::sqrt(std::pow(l.x-r.x,2)+std::pow(l.y-r.y,2)+std::pow(l.z-r.z,2));
+        };
+        std::ofstream data("/tmp/test_shortcut.csv");
+        data << "eps,raw,qraw,opt,qopt" << std::endl;
+
+        const unsigned int iterations_per_eps = 400;
+
+        std::vector<double> epses = {0.07, 0.20};
+
+        for (double eps : epses)
+        {
+            for (unsigned int i = 0; i < iterations_per_eps; i++)
+            {
+                find_object_path(true, eps, true, true);
+                optimize_object_path();
+
+                double raw_len = 0;
+                double qraw_len = 0;
+                for (unsigned int i = 0; i < object_path.size()-1; i++)
+                {
+                    raw_len += dist(object_path.at(i).Q_obj, object_path.at(i+1).Q_obj);
+                    qraw_len += Qdist(object_path.at(i).Q_left, object_path.at(i+1).Q_left);
+                }
+
+                double opt_len = 0;
+                double qopt_len = 0;
+                for (unsigned int i = 0; i < optimized_object_path.size()-1; i++)
+                {
+                    opt_len += dist(optimized_object_path.at(i).Q_obj, optimized_object_path.at(i+1).Q_obj);
+                    qopt_len += Qdist(optimized_object_path.at(i).Q_left, optimized_object_path.at(i+1).Q_left);
+                }
+
+                data << eps << ',' << raw_len << ',' << qraw_len << ',' << opt_len << ',' << qopt_len << std::endl;
+            }
+        }
+
+        set_status("shortcut test done");
+    }
     else
     {
         set_status("unhandled test: " + test_type);
